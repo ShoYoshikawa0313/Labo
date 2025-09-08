@@ -1,0 +1,47 @@
+{
+    "name": "ubuntu",
+    "context": "..",
+    "dockerFile": "../Dockerfile",
+    "remoteUser": "ubuntu",
+    "runArgs": ["--ipc=host", "--gpus", "all"],
+    "postCreateCommand": ["uv", "sync"],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ArianJamasb.protein-viewer",
+                "charliermarsh.ruff",
+                "GitHub.copilot",
+                "mechatroner.rainbow-csv",
+                "ms-azuretools.vscode-docker",
+                "ms-python.python",
+                "ms-toolsai.jupyter",
+                "tamasfe.even-better-toml"
+            ],
+            "settings": {
+                "editor.rulers": [88],
+                "editor.trimAutoWhitespace": true,
+                "files.insertFinalNewline": true,
+                "files.exclude": {
+                    "**/__pycache__/**": true,
+                    "**/*.egg-info/**": true,
+                    "**/.ruff_cache/**": true,
+                    "**/.pytest_cache/**": true,
+                    "**/.ipynb_checkpoints/**": true
+                },
+                "notebook.formatOnCellExecution": true,
+                "notebook.formatOnSave.enabled": true,
+                "python.defaultInterpreterPath": ".venv/bin/python",
+                "[python]": {
+                    "editor.codeActionsOnSave": {
+                        "source.organizeImports": "explicit"
+                    },
+                    "editor.defaultFormatter": "charliermarsh.ruff",
+                    "editor.detectIndentation": false,
+                    "editor.formatOnSave": true,
+                    "editor.insertSpaces": true,
+                    "editor.tabSize": 4
+                }
+            }
+        }
+    }
+}
