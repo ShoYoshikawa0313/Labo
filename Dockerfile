@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     apt-transport-https \
     ca-certificates \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # requirements.txtをコンテナにコピー
