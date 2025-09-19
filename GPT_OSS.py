@@ -2,7 +2,6 @@ from openai import OpenAI
 import re
 from rdkit import Chem
 import random
-import time
 MINIMUM = 1e-10
 
 def query_LLM(gpt, question, model="gpt-oss", temperature=0.0):
@@ -84,19 +83,16 @@ class GPT_OSS:
                     mol_tuple = mol_tuple + tu
                 prompt = task_definition + mol_tuple + task_objective + self.requirements
 
-                print("parent 1 : " + Chem.MolToSmiles(parent_mol[0]))
-                print("parent 2 : " + Chem.MolToSmiles(parent_mol[1]))
-                
-                start_time = time.time()
+                print("parent 1 : " + Chem.MolToSmiles(parent_mol[0]) + f" : {parent_scores[0]:.3f}")
+                print("parent 2 : " + Chem.MolToSmiles(parent_mol[1]) + f" : {parent_scores[1]:.3f}")
+
                 _, r = query_LLM(self.gpt,prompt)
-                end_time = time.time()
+
 
                 proposed_smiles = re.search(r'\\box\{(.*?)\}', r).group(1)
                 proposed_smiles = sanitize_smiles(proposed_smiles)
                 
                 print("offspring => " + proposed_smiles)
-                print(f"time : {end_time - start_time} s")
-                print()
                 
                 assert proposed_smiles != None
                 new_child = Chem.MolFromSmiles(proposed_smiles)

@@ -2,6 +2,7 @@ import os
 import random
 import yaml
 import math
+import time
 from datetime import datetime
 from typing import List  # 型ヒントに使用
 
@@ -123,7 +124,7 @@ class GB_GA_Optimizer():
                 f'avg_top1: {avg_top1:.3f} | ' # 上位1位のスコアを表示します。
                 f'avg_top10: {avg_top10:.3f} | ' # 上位10件の平均スコアを表示します。
                 f'avg_top100: {avg_top100:.3f} | ' # 上位100件の平均スコアを表示します。
-                f'div: {diversity_top100:.3f}') # 多様性を表示します。
+                f'div: {diversity_top100:.3f}  ' + 50*"-") # 多様性を表示します。
         print()
 
 
@@ -142,7 +143,9 @@ class GB_GA_Optimizer():
         output_file_path = os.path.join(self.args.output_dir, 'results_' + suffix + date_str + '.yaml') # 接尾辞を付けた出力ファイルパスを設定します。
 
         with open(output_file_path, 'w') as f: # 出力ファイルを書き込みモードで開きます。
-            yaml.dump({'smiles': smis, 'scores': scores}, f, sort_keys=False) # バッファの内容をYAML形式でファイルに書き込みます。
+            # SMILESをキー、スコアを値とする辞書を作成します。
+            result_dict = {str(s): float(score) for s, score in zip(smis, scores)}
+            yaml.dump(result_dict, f, sort_keys=False) # 作成した辞書をYAML形式でファイルに書き込みます。
 
     def early_stop(self, scores):
         # スコアの履歴リストを受け取り、早期終了すべきかどうかを判断します。
@@ -215,7 +218,7 @@ class GB_GA_Optimizer():
         self.assign_evaluator(evaluator)
         
         # 初期集団を決定 データセットからランダムに選択（探索）
-        starting_population = np.random.choice(self.all_smiles, self.args.population_size)
+        starting_population = np.random.choice(self.all_smiles, self.args.population_size).tolist()
 
         # 初期集団のSMILESをMolオブジェクトに変換し、スコアを計算
         population_smiles = starting_population
@@ -237,7 +240,13 @@ class GB_GA_Optimizer():
             mating_tuples = make_mating_pool(population_mol, population_scores, self.args.population_size)
             
             # GPT-OSSを用いて分子を編集し、子孫を生成
-            offspring_mol = [self.mol_lm.edit(mating_tuples, self.args.mutation_rate) for _ in range(self.args.offspring_size)]
+            offspring_mol = []
+            for i in range(self.args.offspring_size):
+                start = time.time()
+                offspring_mol.append(self.mol_lm.edit(mating_tuples, self.args.mutation_rate))
+                end = time.time()
+                print(f"{i}/{self.args.offspring_size} | score : {(self.score_smi(Chem.MolToSmiles(offspring_mol[-1]))):.3f} | time : {(end - start):.2f}s")
+                print()
 
             # 現世代の集団に新しく生成した子孫集団を追加
             population_mol += offspring_mol
@@ -246,7 +255,9 @@ class GB_GA_Optimizer():
 
             # 新しい世代のスコアを計算
             population_scores = self.evaluate([Chem.MolToSmiles(mol) for mol in population_mol])
-            
+            # 新しい世代のsmilesを生成
+            population_smiles = [Chem.MolToSmiles(mol) for mol in population_mol] 
+
             population_scores, population_mol, population_smiles = self.population_sort(population_scores, population_mol, population_smiles)
 
             avg_score = np.mean(population_scores)
@@ -256,7 +267,7 @@ class GB_GA_Optimizer():
             if self.early_stop(scores):
                 break
 
-         # 結果を保存します。
+        # 結果を保存します。
         self.save_result(population_smiles, population_scores, self.args.mol_lm + "_")
             
     def optimize(self, evaluator, seed=0, project="test"): # 最適化のメインメソッドです。
