@@ -2,7 +2,6 @@ import os
 import random
 import yaml
 import math
-import time
 from datetime import datetime
 from typing import List  # 型ヒントに使用
 
@@ -16,6 +15,7 @@ from tdc.generation import MolGen # tdc.generation.MolGenクラスをインポ�
 
 # 自作モジュールをインポート
 from GPT_OSS import GPT_OSS
+from biot5 import BioT5
 
 # スコアが0になるのを防ぐための微小な値
 MINIMUM = 1e-10
@@ -59,10 +59,12 @@ class GB_GA_Optimizer():
         self.args = args
         
         # 使用する分子言語モデル（MolLM）をインスタンス化
-        self.mol_lm = GPT_OSS()
+        if self.args.mol_lm == "GPT_OSS":
+            self.mol_lm = GPT_OSS(self.args)
+        elif self.args.mol_lm == "BioT5":
+            self.mol_lm = BioT5(self.args)
 
         # taskを言語モデルに設定
-        self.mol_lm.tasks = self.args.tasks
         self.task_evaluator = None
         self.diversity_evaluator = tdc.Evaluator(name = 'Diversity') # 分子の多様性を評価するための評価器を初期化します。
 
@@ -240,13 +242,7 @@ class GB_GA_Optimizer():
             mating_tuples = make_mating_pool(population_mol, population_scores, self.args.population_size)
             
             # GPT-OSSを用いて分子を編集し、子孫を生成
-            offspring_mol = []
-            for i in range(self.args.offspring_size):
-                start = time.time()
-                offspring_mol.append(self.mol_lm.edit(mating_tuples, self.args.mutation_rate))
-                end = time.time()
-                print(f"{i}/{self.args.offspring_size} | score : {(self.score_smi(Chem.MolToSmiles(offspring_mol[-1]))):.3f} | time : {(end - start):.2f}s")
-                print()
+            offspring_mol = self.mol_lm.generate(population_scores, population_mol, mating_tuples)
 
             # 現世代の集団に新しく生成した子孫集団を追加
             population_mol += offspring_mol

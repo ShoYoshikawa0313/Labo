@@ -12,7 +12,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--population_size', type=int, default=120) #最小 100
     parser.add_argument('--offspring_size', type=int, default=70)
-    parser.add_argument('--mutation_rate', type=float, default=0.0)
     parser.add_argument('--output_dir', type=str, default="results")
     parser.add_argument('--mol_lm', type=str, default="GPT_OSS", choices=["BioT5", "MoleculeSTM", "GPT-4", "GPT_OSS"])
     parser.add_argument('--patience', type=int, default=5)

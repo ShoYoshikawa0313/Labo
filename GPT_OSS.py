@@ -2,6 +2,7 @@ from openai import OpenAI
 import re
 from rdkit import Chem
 import random
+import time
 MINIMUM = 1e-10
 
 def query_LLM(gpt, question, model="gpt-oss", temperature=0.0):
@@ -28,7 +29,10 @@ def query_LLM(gpt, question, model="gpt-oss", temperature=0.0):
     return message, response
 
 class GPT_OSS:
-    def __init__(self):
+    def __init__(self, args):
+
+        self.args = args
+
         self.task2description = {
                 'qed': 'I have two molecules and their QED scores. The QED score measures the drug-likeness of the molecule.\n\n',
                 'jnk3': 'I have two molecules and their JNK3 scores. The JNK3 score measures a molecular\'s biological activity against JNK3.\n\n',
@@ -57,17 +61,15 @@ class GPT_OSS:
         self.requirements = """\n\nYour output should follow the format: {<<<Explaination>>>: $EXPLANATION, <<<Molecule>>>: \\box{$Molecule}}. Here are the requirements:\n
         \n\n1. $EXPLANATION should be your analysis.\n2. The $Molecule should be the smiles of your propsosed molecule.\n3. The molecule should be valid.
         """
-        
-        self.tasks = None
 
         self.gpt = OpenAI(
             base_url = 'http://10.34.35.194:11434/v1',
             api_key='ollama', # required, but unused
         )
 
-    def edit(self, mating_tuples, mutation_rate):
-        task_definition = self.task2description[self.tasks[0]]
-        task_objective = self.task2objective[self.tasks[0]]
+    def edit(self, mating_tuples):
+        task_definition = self.task2description[self.args.tasks[0]]
+        task_objective = self.task2objective[self.args.tasks[0]]
 
         while(True):
             parent = []
@@ -101,6 +103,17 @@ class GPT_OSS:
             except Exception as e:
                 print( '\033[31m' + "Error Invalid Response!! Retry !!" + '\033[0m' )
                 print()
+
+    def generate(self, population_scores, population_mol, mating_tuples):
+        offspring_mol = []
+        for i in range(self.args.offspring_size):
+            start = time.time()
+            offspring_mol.append(self.edit(mating_tuples))
+            end = time.time()
+            print(f"{i}/{self.args.offspring_size} | time : {(end - start):.2f}s")
+            print()
+        return offspring_mol
+
     
 def sanitize_smiles(smi):
     """
@@ -128,3 +141,4 @@ def sanitize_smiles(smi):
         return smi_canon
     except:
         return None
+
