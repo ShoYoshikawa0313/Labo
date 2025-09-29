@@ -1,37 +1,22 @@
 from openai import OpenAI
 import re
-from rdkit import Chem
 import random
-import time
+
+from rdkit import Chem
+
 MINIMUM = 1e-10
 
-def query_LLM(gpt, question, model="gpt-oss", temperature=0.0):
-    message = [{"role": "system", "content": "You are a helpful agent who can answer the question based on your molecule knowledge."}]
+class gpt_oss:
+    def __init__(self):
 
-    prompt1 = question
-    message.append({"role": "user", "content": prompt1})
-
-    params = {
-        "model": "gpt-oss:20b",
-        "max_tokens": 2048,
-        "temperature": temperature,
-        "messages": message
-    }
-
-    for retry in range(3):
-        try:
-            response = gpt.chat.completions.create(**params).choices[0].message.content
-            message.append({"role": "assistant", "content": response})
-            break
-        except Exception as e:
-            print(f"{type(e).__name__} {e}")
-
-    return message, response
-
-class GPT_OSS:
-    def __init__(self, args):
-
-        self.args = args
+        self.gpt = OpenAI(
+            base_url = 'http://10.34.35.194:11434/v1',
+            api_key='ollama', # required, but unused
+        )
+        
+        self.requirements = """\n\nYour output should follow the format: {<<<Explaination>>>: $EXPLANATION, <<<Molecule>>>: \\box{$Molecule}}. Here are the requirements:\n
+        \n\n1. $EXPLANATION should be your analysis.\n2. The $Molecule should be the smiles of your propsosed molecule.\n3. The molecule should be valid.
+        """
 
         self.task2description = {
                 'qed': 'I have two molecules and their QED scores. The QED score measures the drug-likeness of the molecule.\n\n',
@@ -57,88 +42,78 @@ class GPT_OSS:
                 'thiothixene_rediscovery': 'Please propose a new molecule that has a higher thiothixene rediscovery score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.\n\n',
                 'mestranol_similarity': 'Please propose a new molecule that has a higher mestranol similarity score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.\n\n',
                 }
-
-        self.requirements = """\n\nYour output should follow the format: {<<<Explaination>>>: $EXPLANATION, <<<Molecule>>>: \\box{$Molecule}}. Here are the requirements:\n
-        \n\n1. $EXPLANATION should be your analysis.\n2. The $Molecule should be the smiles of your propsosed molecule.\n3. The molecule should be valid.
+        
+    def sanitize_smiles(self, smi):
         """
+        Return a canonical smile representation of smi 
+        """
+        if smi == '':
+            return None
+        try:
+            mol = Chem.MolFromSmiles(smi, sanitize=True)
+            smi_canon = Chem.MolToSmiles(mol, isomericSmiles=False, canonical=True)
+            return smi_canon
+        except:
+            return None
+        
+    def gpt_request(self, question, temperature=0.0):
+        message = [{"role": "system", "content": "You are a helpful agent who can answer the question based on your molecule knowledge."}]
 
-        self.gpt = OpenAI(
-            base_url = 'http://10.34.35.194:11434/v1',
-            api_key='ollama', # required, but unused
-        )
+        message.append({"role": "user", "content": question})
 
-    def edit(self, mating_tuples):
-        task_definition = self.task2description[self.args.tasks[0]]
-        task_objective = self.task2objective[self.args.tasks[0]]
+        params = {
+            "model": "gpt-oss:20b",
+            "max_tokens": 2048,
+            "temperature": temperature,
+            "messages": message
+        }
 
-        while(True):
-            parent = []
-            parent.append(random.choice(mating_tuples))
-            parent.append(random.choice(mating_tuples))
-            parent_mol = [t[1] for t in parent]
-            parent_scores = [t[0] for t in parent]
-
+        for retry in range(3):
             try:
-                mol_tuple = ''
-                for i in range(2):
-                    tu = '\n[' + Chem.MolToSmiles(parent_mol[i]) + ',' + str(parent_scores[i]) + ']'
-                    mol_tuple = mol_tuple + tu
-                prompt = task_definition + mol_tuple + task_objective + self.requirements
+                response = self.gpt.chat.completions.create(**params).choices[0].message.content
+                message.append({"role": "assistant", "content": response})
+                break
+            except Exception as e:
+                print(f"{type(e).__name__} {e}")
 
-                print("parent 1 : " + Chem.MolToSmiles(parent_mol[0]) + f" : {parent_scores[0]:.3f}")
-                print("parent 2 : " + Chem.MolToSmiles(parent_mol[1]) + f" : {parent_scores[1]:.3f}")
+        return message, response
 
-                _, r = query_LLM(self.gpt,prompt)
+    def edit_smi(self, parent_info: str, task):
+        task_definition = self.task2description[task]
+        task_objective = self.task2objective[task]
+        while(True):
+            try:
+                prompt = task_definition + parent_info + task_objective + self.requirements
 
-
-                proposed_smiles = re.search(r'\\box\{(.*?)\}', r).group(1)
-                proposed_smiles = sanitize_smiles(proposed_smiles)
+                message, response = self.gpt_request(self.gpt,prompt)
+                proposed_smiles = re.search(r'\\box\{(.*?)\}', response).group(1)
+                proposed_smiles = self.sanitize_smiles(proposed_smiles)
                 
-                print("offspring => " + proposed_smiles)
-                
-                assert proposed_smiles != None
-                new_child = Chem.MolFromSmiles(proposed_smiles)
+                if proposed_smiles is not None :  return proposed_smiles
 
-                return new_child
             except Exception as e:
                 print( '\033[31m' + "Error Invalid Response!! Retry !!" + '\033[0m' )
-                print()
 
-    def generate(self, population_scores, population_mol, mating_tuples):
-        offspring_mol = []
+class GPT_OSS:
+    def __init__(self, args):
+
+        self.args = args
+        self.LLM = gpt_oss()
+
+    def generational_shift(self, mating_list: list):
+        families = []
         for i in range(self.args.offspring_size):
-            start = time.time()
-            offspring_mol.append(self.edit(mating_tuples))
-            end = time.time()
-            print(f"{i}/{self.args.offspring_size} | time : {(end - start):.2f}s")
-            print()
-        return offspring_mol
+            
+            parent = []
+            parent.append(random.choice(mating_list))
+            parent.append(random.choice(mating_list))
 
-    
-def sanitize_smiles(smi):
-    """
-    Return a canonical smile representation of smi 
+            parent_info = ''
+            for j in range(2):
+                parent_info += '\n[' + parent[j].smi + ',' + str(parent[j].score) + ']'
 
-    Parameters
-    ----------
-    smi : str
-        smile string to be canonicalized 
+            edited_smi = self.LLM.edit_smi(parent_info, self.args.task)
+            families.append((edited_smi,parent[0].smi,parent[1].smi))
 
-    Returns
-    -------
-    mol (rdkit.Chem.rdchem.Mol) : 
-        RdKit mol object (None if invalid smile string smi)
-    smi_canon (string)          : 
-        Canonicalized smile representation of smi (None if invalid smile string smi)
-    conversion_successful (bool): 
-        True/False to indicate if conversion was  successful 
-    """
-    if smi == '':
-        return None
-    try:
-        mol = Chem.MolFromSmiles(smi, sanitize=True)
-        smi_canon = Chem.MolToSmiles(mol, isomericSmiles=False, canonical=True)
-        return smi_canon
-    except:
-        return None
+        return families
 
