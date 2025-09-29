@@ -1,0 +1,19 @@
+GPT:
+    requirements: "\n\nYour output should follow the format: {<<<Explaination>>>: $EXPLANATION, <<<Molecule>>>: \\box{$Molecule}}. Here are the requirements:\n
+        \n\n1. $EXPLANATION should be your analysis.\n2. The $Molecule should be the smiles of your propsosed molecule.\n3. The molecule should be valid."
+    task2description : 
+        qed: "I have two molecules and their QED scores. The QED score measures the drug-likeness of the molecule.\n\n"
+    task2objective : 
+        qed: "Please propose a new molecule that has a higher QED score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.\n\n"
+BioT5:
+    task2description:
+        qed: "Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that looks more like a drug.\n\n"
+        jnk3: "Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that is a greater inhibitor of JNK3.\n\n"
+        drd2: "Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that inhibits DRD2 more.\n\n"
+        gsk3b: "Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that inhibits GSK3B more.\n\n"
+        Isomers_C9H10N2O2PF2Cl: "Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that has the formula C9H10N2O2PF2Cl.\n\n"
+        perindopril_mpo: "Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that looks more like Perindopril.\n\n"
+        sitagliptin_mpo: "Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that looks more like Sitagliptin.\n\n"
+        ranolazine_mpo: "Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that looks more like Ranolazine.\n\n"
+        thiothixene_rediscovery: "Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that looks more like Thiothixene.\n\n"
+        mestranol_similarity: "Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that looks more like Mestranol.\n\n"

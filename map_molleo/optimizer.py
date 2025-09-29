@@ -2,8 +2,8 @@ import os
 import random
 import yaml
 import math
+import tqdm
 from typing import List  # 型ヒントに使用
-from datetime import datetime, timezone, timedelta
 import numpy as np  # 数値計算に使用
 
 from rdkit import Chem, rdBase  # 分子操作のためのRDKitライブラリ
@@ -40,6 +40,7 @@ class GB_GA_Optimizer():
 
         data = MolGen(name = 'ZINC') # ZINCデータセットをロードします。
         self.all_smiles = data.get_data()['smiles'].tolist() # データセットからSMILESのリストを取得します。
+        self.all_smiles.sort()
 
     def score_smi(self,smi):
         # SMILES文字列がNoneの場合、スコア0を返します。
@@ -66,14 +67,17 @@ class GB_GA_Optimizer():
             return fitness
 
     def make_initial_population(self):
-        initial_smis = np.random.choice(self.all_smiles, self.args.population_size).tolist()
+        #initial_smis = np.random.choice(self.all_smiles, self.args.population_size).tolist() 
+        initial_smis = self.all_smiles[:]
         initial_population = []
-        for smi in initial_smis:
+        for smi in tqdm.tqdm(initial_smis):
             mol = Chem.MolFromSmiles(smi)
             score = self.score_smi(smi)
             initial_population.append(Mol_Data(mol,smi,score))
         initial_population.sort(reverse=True)
-        return initial_population
+        #return initial_population
+        return initial_population[-self.args.population_size:]
+
 
     def make_mating_pool(self, population: List[Mol_Data], offspring_size: int):
         '''
@@ -217,7 +221,6 @@ class GB_GA_Optimizer():
             # --- 早期終了判定 ---
             if self.early_stop(scores):
                 break
-        
             
     def optimize(self): # 最適化のメインメソッドです。
         """
@@ -228,12 +231,5 @@ class GB_GA_Optimizer():
 
         np.random.seed(self.args.seed) # numpyの乱数シードを設定します。
         random.seed(self.args.seed) # Pythonのrandomモジュールの乱数シードを設定します。
-
-        jst = timezone(timedelta(hours=9), 'JST')
-        date_str = datetime.now(jst).strftime("%m-%d-%H-%M")
-        self.args.output_dir = os.path.join(self.args.output_dir, 'results_' + self.args.LLM + "_" + date_str) # 接尾辞を付けた出力ファイルパスを設定します。
-
-        if not os.path.exists(self.args.output_dir):
-            os.mkdir(self.args.output_dir)
 
         self._optimize() # 内部の最適化メソッドを呼び出します。
