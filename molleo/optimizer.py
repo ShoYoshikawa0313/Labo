@@ -16,6 +16,7 @@ from tdc.generation import MolGen # tdc.generation.MolGenクラスをインポ�
 from mol_data import Mol_Data
 from GPT_OSS import GPT_OSS
 from biot5 import BioT5
+from gemini import Gemini
 
 # スコアが0になるのを防ぐための微小な値
 MINIMUM = 1e-10
@@ -32,6 +33,8 @@ class GB_GA_Optimizer():
         # 使用する分子言語モデル（MolLM）をインスタンス化
         if self.args.LLM == "GPT_OSS":
             self.LLM = GPT_OSS(self.args)
+        elif self.args.LLM == "Gemini":
+            self.LLM = Gemini(self.args)
         elif self.args.LLM == "BioT5":
             self.LLM = BioT5(self.args)
 
@@ -67,16 +70,14 @@ class GB_GA_Optimizer():
             return fitness
 
     def make_initial_population(self):
-        #initial_smis = np.random.choice(self.all_smiles, self.args.population_size).tolist() 
-        initial_smis = self.all_smiles[:]
+        initial_smis = np.random.choice(self.all_smiles, self.args.population_size).tolist() 
         initial_population = []
         for smi in tqdm.tqdm(initial_smis):
             mol = Chem.MolFromSmiles(smi)
             score = self.score_smi(smi)
             initial_population.append(Mol_Data(mol,smi,score))
         initial_population.sort(reverse=True)
-        #return initial_population
-        return initial_population[-self.args.population_size:]
+        return initial_population
 
 
     def make_mating_pool(self, population: List[Mol_Data], offspring_size: int):

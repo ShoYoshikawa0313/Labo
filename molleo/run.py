@@ -10,7 +10,7 @@ def main():
     parser.add_argument('-offspring_size', type=int, default=50)
     parser.add_argument('-output_dir', type=str, default="results")
     parser.add_argument("-LLM_prompt", type=str, default="prompt.yaml")
-    parser.add_argument('-LLM', type=str, default="GPT_OSS", choices=["BioT5", "MoleculeSTM", "GPT-4", "GPT_OSS"])
+    parser.add_argument('-LLM', type=str, default="GPT_OSS", choices=["BioT5", "MoleculeSTM", "GPT-4", "GPT_OSS","Gemini"])
     parser.add_argument('-patience', type=int, default=5)
     parser.add_argument('-max_generations', type=int, default=100)
     parser.add_argument('-seed', type=int, default=0)

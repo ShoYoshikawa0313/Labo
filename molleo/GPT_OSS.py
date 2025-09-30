@@ -19,12 +19,10 @@ class GPT_OSS:
 
         self.prompt = None
         with open(self.args.LLM_prompt, 'r', encoding='utf-8') as f:
-            self.prompt = yaml.safe_load(f)["GPT"]
+            self.prompt = yaml.safe_load(f)["GPT_Batch"]
 
         self.requirements = self.prompt["requirements"]
-        self.task_definition = self.prompt["task2description"][self.args.task]
-        self.task_objective = self.prompt["task2objective"][self.args.task]
-        
+        self.task2objective = self.prompt["task2objective"]
         
     def sanitize_smiles(self, smi):
         """
@@ -65,7 +63,7 @@ class GPT_OSS:
         
         while(True):
             try:
-                prompt = self.task_definition + parent_info + self.task_objective + self.requirements
+                prompt = self.requirements + parent_info + self.task2objective
 
                 message, response = self.gpt_request(self.gpt,prompt)
                 proposed_smiles = re.search(r'\\box\{(.*?)\}', response).group(1)
@@ -78,18 +76,18 @@ class GPT_OSS:
 
     def generational_shift(self, mating_list: list):
         families = []
+        parent_info = ""
         for i in range(self.args.offspring_size):
-            
             parent = []
             parent.append(random.choice(mating_list))
             parent.append(random.choice(mating_list))
 
-            parent_info = ''
-            for j in range(2):
-                parent_info += '\n[' + parent[j].smi + ',' + str(parent[j].score) + ']'
+            parent_info += f"Pair {i+1}:\n"
+            parent_info += f"[ ParentA : {parent[0].smi} , {parent[0].score:.3f} ]\n"
+            parent_info += f"[ ParentB : {parent[1].smi} , {parent[1].score:.3f} ]\n"
 
-            edited_smi = self.edit_smi(parent_info)
-            families.append((edited_smi,parent[0].smi,parent[1].smi))
+        edited_smi = self.edit_smi(parent_info)
+        families.append((edited_smi,parent[0].smi,parent[1].smi))
 
         return families
 

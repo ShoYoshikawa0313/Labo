@@ -140,7 +140,7 @@ class Visualizer:
 # このブロックは、スクリプトが直接実行された場合にのみ実行されます。
 if __name__ == '__main__':
 
-    input_directory = 'results/results_BioT5_09-29-17-41' 
+    input_directory = 'results' 
     
     # Visualizerのインスタンスを作成します。
     visualizer = Visualizer()
