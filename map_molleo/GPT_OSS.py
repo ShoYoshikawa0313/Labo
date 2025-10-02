@@ -2,6 +2,7 @@ from openai import OpenAI
 import re
 import yaml
 import random
+import time
 
 from rdkit import Chem
 
@@ -12,9 +13,9 @@ class GPT_OSS:
 
         self.args = args
 
-        self.gpt = OpenAI(
-            base_url = 'http://10.34.35.194:11434/v1',
-            api_key='ollama', # required, but unused
+        self.client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key="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",
         )
 
         self.prompt = None
@@ -53,7 +54,7 @@ class GPT_OSS:
 
         for retry in range(3):
             try:
-                response = self.gpt.chat.completions.create(**params).choices[0].message.content
+                response = self.client.chat.completions.create(**params).choices[0].message.content
                 message.append({"role": "assistant", "content": response})
                 break
             except Exception as e:
@@ -89,6 +90,8 @@ class GPT_OSS:
                 parent_info += '\n[' + parent[j].smi + ',' + str(parent[j].score) + ']'
 
             edited_smi = self.edit_smi(parent_info)
+            print(edited_smi)
+            time.sleep()
             families.append((edited_smi,parent[0].smi,parent[1].smi))
 
         return families

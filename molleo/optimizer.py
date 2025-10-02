@@ -14,7 +14,7 @@ from tdc.generation import MolGen # tdc.generation.MolGenクラスをインポ�
 
 # 自作モジュールをインポート
 from mol_data import Mol_Data
-from GPT_OSS import GPT_OSS
+from molleo.OR_batch import OPEN_ROUTER
 from biot5 import BioT5
 from gemini import Gemini
 
@@ -32,9 +32,9 @@ class GB_GA_Optimizer():
         
         # 使用する分子言語モデル（MolLM）をインスタンス化
         if self.args.LLM == "GPT_OSS":
-            self.LLM = GPT_OSS(self.args)
+            self.LLM = OPEN_ROUTER(self.args, model="openai/gpt-oss-20b:free", interval=10)
         elif self.args.LLM == "Gemini":
-            self.LLM = Gemini(self.args)
+            self.LLM = Gemini(self.args, model="gemini-2.5-flash", interval=10)
         elif self.args.LLM == "BioT5":
             self.LLM = BioT5(self.args)
 

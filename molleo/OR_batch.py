@@ -1,4 +1,4 @@
-import google.generativeai as genai
+from openai import OpenAI
 import re
 import yaml
 import json
@@ -9,15 +9,18 @@ from rdkit import Chem
 
 MINIMUM = 1e-10
 
-genai.configure(api_key="AIzaSyB1yPa0EsQ21nfyVy_1uxm1UACtgkh_1aE")
-
-class Gemini:
+class OPEN_ROUTER: 
     def __init__(self, args, model, interval):
 
         self.args = args
 
+        self.model = model
         self.request_interval = interval
-        self.model = genai.GenerativeModel(model)
+
+        self.client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key="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",
+        )
 
         self.prompt = None
         with open(self.args.LLM_prompt, 'r', encoding='utf-8') as f:
@@ -28,19 +31,25 @@ class Gemini:
 
         self.last_request_time = time.time()
         
-    def request(self, prompt):
-        response = ""
+    def request(self, question):
+        message = [{"role": "system", "content": "You are a helpful agent who can answer the question based on your molecule knowledge."}]
+        message.append({"role": "user", "content": question})
+
+        response = None
         while(True):
             now = time.time()
             if now - self.last_request_time > self.request_interval:
                 try:
-                    response = self.model.generate_content(prompt).text
+                    response = self.client.chat.completions.create(
+                    model= self.model,
+                    messages = message
+                    ) 
                 except Exception as e:
                     print(f"{type(e).__name__} {e}")
-                    print(f"gemini request error")
+                    print(f"request error")
                     return None
                 self.last_request_time = now
-                return response                
+                return response.choices[0].message.content               
             else:
                 time.sleep(0.5)
 
