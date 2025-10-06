@@ -7,7 +7,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from rdkit import Chem
-from rdkit.Chem import Draw
+from rdkit.Chem import Draw, AllChem
+from rdkit.DataStructs import TanimotoSimilarity
 from tdc import Evaluator
 
 from mol_data import Mol_Data
@@ -124,10 +125,18 @@ class Visualizer:
                     parent1 = self.smi2mlc[offspring.parent1_smi]
                     parent2 = self.smi2mlc[offspring.parent2_smi]
 
-                    family = [offspring.mol, parent1.mol, parent2.mol]
+                    fp_parent1 = AllChem.GetMorganFingerprintAsBitVect(parent1.mol, 2, nBits=1024)
+                    fp_parent2 = AllChem.GetMorganFingerprintAsBitVect(parent2.mol, 2, nBits=1024)
+                    fp_offspring = AllChem.GetMorganFingerprintAsBitVect(offspring.mol, 2, nBits=1024)
+
+                    sim_p1_off = TanimotoSimilarity(fp_parent1, fp_offspring)
+                    sim_p2_off = TanimotoSimilarity(fp_parent2, fp_offspring)
+
+                    family = [parent1.mol, parent2.mol, offspring.mol]
                     legends = [f"parent1 score : {parent1.score:.3f}",
-                                f"parent2 score : {parent2.score:.3f}",
-                                f"offspring score : {offspring.score:.3f}"]
+                               f"parent2 score : {parent2.score:.3f}",
+                               f"offspring score : {offspring.score:.3f}\n" +
+                               f"sim to p1: {sim_p1_off:.3f}, sim to p2: {sim_p2_off:.3f}"]
 
                     img = Draw.MolsToGridImage(family, molsPerRow=3, subImgSize=(300, 300), legends=legends)
                     
@@ -140,13 +149,13 @@ class Visualizer:
 # このブロックは、スクリプトが直接実行された場合にのみ実行されます。
 if __name__ == '__main__':
 
-    input_directory = 'results/results_BioT5_09-29-17-41' 
+    input_directory = 'results' 
     
     # Visualizerのインスタンスを作成します。
     visualizer = Visualizer()
     
     visualizer.results_load(input_directory)
-    visualizer.plot_score_shift(10)
+    visualizer.plot_score_shift(5)
     visualizer.plot_diversity_shift()
-    #visualizer.visualize_crossover()
+    visualizer.visualize_crossover()
 

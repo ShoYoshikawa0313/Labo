@@ -1,10 +1,110 @@
-GPT:
-    requirements: "\n\nYour output should follow the format: {<<<Explaination>>>: $EXPLANATION, <<<Molecule>>>: \\box{$Molecule}}. Here are the requirements:\n
-        \n\n1. $EXPLANATION should be your analysis.\n2. The $Molecule should be the smiles of your propsosed molecule.\n3. The molecule should be valid."
-    task2description : 
-        qed: "I have two molecules and their QED scores. The QED score measures the drug-likeness of the molecule.\n\n"
-    task2objective : 
-        qed: "Please propose a new molecule that has a higher QED score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.\n\n"
+LLM:
+    original: 
+        requirements: "\n\nYour output should follow the format: {<<<Explaination>>>: $EXPLANATION, <<<Molecule>>>: \\box{$Molecule}}. Here are the requirements:\n
+            \n\n1. $EXPLANATION should be your analysis.\n2. The $Molecule should be the smiles of your propsosed molecule.\n3. The molecule should be valid."
+        task2description : 
+            qed: "I have two molecules and their QED scores. The QED score measures the drug-likeness of the molecule.\n\n"
+        task2objective : 
+            qed: "Please propose a new molecule that has a higher QED score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.\n\n"
+    
+    original_batch:
+        head: 
+            qed: |
+                I have two molecules and their QED scores. The QED score measures the drug-likeness of the molecule.
+                
+        tail:
+            qed: |
+
+                You are a skilled chemist AI tasked with generating new molecules from given parent pairs. Follow the instructions below to propose one new molecule for each pair.
+                
+                1. Input: Each pair consists of two parent molecules, each with its SMILES and QED score.
+
+                2. Molecular Operation Process:
+                Please propose a new molecule that has a higher QED score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.
+
+                3. Output Format: Output all new molecules at once in the strict JSON format below.
+                Include <<<json start>>> and <<<json end>>> at the beginning and end of the json file.
+                Each entry must include the pair number, the SMILES of the new molecule, and a logical explanation of the operation.
+                
+                <<<json start>>>
+                {
+                    "Pair 1": {
+                        "SMILES": "SMILES of the generated molecule",
+                        "Explanation": "Logical explanation of the operation ... "
+                    },
+                    "Pair 2": {
+                        "SMILES": "SMILES of the generated molecule",
+                        "Explanation": "Logical explanation of the operation ... "
+                    },
+                    ...
+                }
+                <<<json end>>>
+
+                Here are the requirements:
+                1. Explaination should be a logical explanation of the operation.
+                2. The SMILES should be the smiles of your propsosed molecule.
+                3. The molecule should be valid.
+
+        
+
+    detailed_single:
+        requirements: "\n I have the SMILES of the two molecules and their QED scores, which are a measure of a molecule's drug-likeness.\n\n"
+        task2objective: |
+        
+            You are a skilled chemist AI tasked with generating new molecules from given parent. Follow the instructions below to propose one new molecule.
+
+            1. Molecular Operation Process:
+            1.1. Crossover:
+            * Identify and extract the main molecular scaffolds and functional groups from parent molecules A and B.
+            * Combine these components to construct a new, hybrid molecular scaffold. Do not consider the QED score at this stage.
+            1.2. Mutation (QED Optimization):
+            * Apply modifications to the crossover-generated scaffold to maximize its QED score.
+
+            2. Output Format: 
+            Your output should follow the format: {<<<Explaination>>>: Describe the scaffolds selected for the crossover and the specific modifications made for the mutation., <<<Molecule>>>: \\box{$Molecule}}.
+
+            3. Constraints:
+            * The generated SMILES must represent a valid molecule.
+            * The explanation must clearly distinguish between the intent of the crossover and the mutation and be concise.
+
+    detailed_batch:
+        requirements: "\n I have the SMILES of the two molecules and their QED scores, which are a measure of a molecule's drug-likeness.\n\n"
+        task2objective: |
+        
+            You are a skilled chemist AI tasked with generating new molecules from given parent pairs. Follow the instructions below to propose one new molecule for each pair.
+
+            1. Input: Each pair consists of two parent molecules, each with its SMILES and QED score.
+
+            2. Molecular Operation Process:
+            2.1. Crossover:
+            * Identify and extract the main molecular scaffolds and functional groups from parent molecules A and B.
+            * Combine these components to construct a new, hybrid molecular scaffold. Do not consider the QED score at this stage.
+            2.2. Mutation (QED Optimization):
+            * Apply modifications to the crossover-generated scaffold to maximize its QED score.
+
+            3. Output Format: Output all new molecules at once in the strict JSON format below.
+            Include <<<json start>>> and <<<json end>>> at the beginning and end of the json file.
+            Each entry must include the pair number, the SMILES of the new molecule, and a logical explanation of the operation.
+            
+            <<<json start>>>
+            {
+                "Pair 1": {
+                    "SMILES": "SMILES of the generated molecule",
+                    "Explanation": "Describe the scaffolds selected for the crossover and the specific modifications made for the mutation."
+                },
+                "Pair 2": {
+                    "SMILES": "SMILES of the generated molecule",
+                    "Explanation": "Describe the scaffolds selected for the crossover and the specific modifications made for the mutation."
+                },
+                ...
+            }
+            <<<json end>>>
+
+            4. Constraints:
+            * The generated SMILES must represent a valid molecule.
+            * The explanation must clearly distinguish between the intent of the crossover and the mutation and be concise.
+            * The input data for each pair is provided as prior context. Please begin the task execution.
+
 BioT5:
     task2description:
         qed: "Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that looks more like a drug.\n\n"
