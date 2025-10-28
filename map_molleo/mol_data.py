@@ -5,10 +5,11 @@ from rdkit.Chem import Mol
 # 他の比較演算子（<=, >, >=）も自動で実装してくれます。
 @functools.total_ordering
 class Mol_Data:
-    def __init__(self, mol: Mol, smi: str, score: float, parent1_smi: str = "", parent2_smi: str = ""):
+    def __init__(self, mol: Mol, smi: str, score: float, similarity: float, parent1_smi: str = "", parent2_smi: str = ""):
         self.mol = mol
         self.smi = smi
         self.score = score
+        self.similarity = similarity
         self.parent1_smi = parent1_smi
         self.parent2_smi = parent2_smi
 
@@ -36,6 +37,7 @@ class Mol_Data:
         return {
             "smi": self.smi,
             "score": self.score,
+            "similarity": self.similarity,
             "parent1_smi": self.parent1_smi,
             "parent2_smi": self.parent2_smi
         }

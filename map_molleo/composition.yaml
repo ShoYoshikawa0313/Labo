@@ -1,0 +1,53 @@
+Model1:
+    - LLM: BioT5
+      LLM_type: clm
+      name: BioT5
+      population_size: 100
+      offspring_size: 50
+      interval: 1.0
+      task: qed
+      prompt_template: |
+            Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that looks more like a drug.\n\n
+
+    - LLM: gemini-2.5-flash
+      LLM_type: gemini
+      name: gemini
+      population_size: 100
+      offspring_size: 50
+      interval: 10.0
+      task: qed
+      prompt_template: |
+            I have two molecules and their QED scores. The QED score measures the drug-likeness of the molecule.
+
+            <<<ParentInfo>>>
+
+            You are a skilled chemist AI tasked with generating new molecules from given parent pairs. Follow the instructions below to propose one new molecule for each pair.
+            
+            1. Input: Each pair consists of two parent molecules, each with its SMILES and QED score.
+
+            2. Molecular Operation Process:
+            Please propose a new molecule that has a higher QED score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.
+
+            3. Output Format: Output all new molecules at once in the strict JSON format below.
+            Include <<<json start>>> and <<<json end>>> at the beginning and end of the json file.
+            Each entry must include the pair number, the SMILES of the new molecule, and a logical explanation of the operation.
+            
+            <<<json start>>>
+            {
+                "Pair 1": {
+                    "SMILES": "SMILES of the generated molecule",
+                    "Explanation": "Logical explanation of the operation ... "
+                },
+                "Pair 2": {
+                    "SMILES": "SMILES of the generated molecule",
+                    "Explanation": "Logical explanation of the operation ... "
+                },
+                ...
+            }
+            <<<json end>>>
+
+            Here are the requirements:
+            1. Explaination should be a logical explanation of the operation.
+            2. The SMILES should be the smiles of your propsosed molecule.
+            3. The molecule should be valid.
+

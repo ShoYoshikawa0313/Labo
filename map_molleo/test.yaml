@@ -1,0 +1,11 @@
+Model1:
+    - LLM: TSMMG
+      LLM_type: clm
+      name: TSMMG
+      population_size: 100
+      offspring_size: 50
+      interval: 0.0
+      task: qed
+      prompt_template: |
+            Definition: Change some parts of <<<SMILES>>> to increase QED score.
+

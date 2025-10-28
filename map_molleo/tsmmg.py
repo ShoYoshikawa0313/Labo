@@ -7,14 +7,14 @@ from rdkit import Chem
 # 自作モジュールのインポート
 import crossover as co
 
-class BioT5:
+class TSMMG:
     def __init__(self, composit):
         
         self.offspring_size = composit["offspring_size"]
         self.task_definition = composit["prompt_template"]
 
-        self.base_url = "http://10.34.35.194:5000"
-        self.endpoint = "/biot5/"
+        self.base_url = "http://10.34.35.194:8080"
+        self.endpoint = "/TSMMG/"
     
     def sanitize_smiles(self, smi):
         """
@@ -29,11 +29,10 @@ class BioT5:
         except:
             return None
 
-    def biot5_request(self,smi,task):
+    def tsmmg_request(self,smi,task):
 
         params = {
-        "smiles": smi,
-        "task": task
+        "prompt": task.replace("<<<SMILES>>>",smi)
         }
 
         try:
@@ -56,7 +55,7 @@ class BioT5:
         return ""
 
     def edit_smi(self, smi):
-        response = self.biot5_request(smi, self.task_definition)
+        response = self.tsmmg_request(smi, self.task_definition)
         proposed_smiles = self.sanitize_smiles(response)
 
         if proposed_smiles is not None: return proposed_smiles
@@ -86,8 +85,8 @@ class BioT5:
             # Step 1 交叉という標準的な遺伝的操作を用いて、ベースとなる子孫集団を生成
             # メイティングプールから親を選択し、交叉を繰り返して指定された数の子孫候補を生成します。
             base_smi, parent1_smi, parent2_smi = self.reproduce(mating_list)
-            # Step 2 スコアが上位の優れた親分子をBioT5モデルに入力し、より有望な化学構造空間を探索するために分子を「編集」させる
-            # BioT5モデルで編集させます。
+            # Step 2 スコアが上位の優れた親分子をTSMMGモデルに入力し、より有望な化学構造空間を探索するために分子を「編集」させる
+            # TSMMGモデルで編集させます。
             edited_smi = self.edit_smi(base_smi)
             print(f"{i} / {self.offspring_size} : {parent1_smi}, {parent2_smi} => {base_smi}")
             families.append((edited_smi, parent1_smi, parent2_smi))

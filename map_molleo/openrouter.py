@@ -9,25 +9,18 @@ from rdkit import Chem
 
 MINIMUM = 1e-10
 
-class OPEN_ROUTER: 
-    def __init__(self, args, model, interval):
+class Open_Router: 
+    def __init__(self, composit):
 
-        self.args = args
-
-        self.model = model
-        self.request_interval = interval
+        self.model = composit["LLM"]
+        self.request_interval = composit["interval"]
+        self.prompt_template = composit["prompt_template"]
+        self.offspring_size = composit["offspring_size"]
 
         self.client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key="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",
         )
-
-        self.prompt = None
-        with open(self.args.LLM_prompt, 'r', encoding='utf-8') as f:
-            self.prompt = yaml.safe_load(f)["LLM"]["original_batch"]
-
-        self.head = self.prompt["head"]["qed"]
-        self.tail = self.prompt["tail"]["qed"]
 
         self.last_request_time = time.time()
         
@@ -93,7 +86,7 @@ class OPEN_ROUTER:
             if smi is not None: smis.append(smi)
             else: smis.append("")
 
-        if len(smis) != self.args.offspring_size:
+        if len(smis) != self.offspring_size:
             print("Not enough SMILES Error")
             return None
 
@@ -102,7 +95,7 @@ class OPEN_ROUTER:
     def ramdom_parents(self, mating_list):
         parents = []
         parent_info = ""
-        for i in range(self.args.offspring_size):
+        for i in range(self.offspring_size):
             parentA = random.choice(mating_list)
             parentB = random.choice(mating_list)
             parents.append((parentA,parentB))
@@ -112,10 +105,10 @@ class OPEN_ROUTER:
             parent_info += f"[ ParentB : {parentB.smi} , {parentB.score:.3f} ]\n"
         return parent_info, parents
 
-    def generational_shift(self, mating_list: list):
+    def mating(self, mating_list):
         while(True):
             parent_info, parents = self.ramdom_parents(mating_list)
-            prompt = self.head + parent_info + self.tail
+            prompt = self.prompt_template.replace("<<<ParentInfo>>>",parent_info)
 
             response = self.request(prompt)
             if response is None : continue
