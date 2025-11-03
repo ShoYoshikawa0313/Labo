@@ -7,10 +7,11 @@ import math
 from rdkit import rdBase  # 分子操作のためのRDKitライブラリ
 rdBase.DisableLog('rdApp.error')  # RDKitのエラーログを無効化
 
-from biot5 import BioT5
-from tsmmg import TSMMG
-from openrouter import Open_Router
-from gemini import Gemini
+from LLM_operator.biot5 import BioT5
+from LLM_operator.llaSMol import LlaSMol
+from LLM_operator.drug_assist import Drug_Assist
+from LLM_operator.openrouter_mono import Open_Router
+from LLM_operator.gemini import Gemini
 
 from generation import Generation 
 
@@ -37,8 +38,10 @@ class Map_Optimizer:
             if comps["LLM_type"] == "clm":
                 if comps["LLM"] == "BioT5":
                     LLM = BioT5(comps)
-                elif comps["LLM"] == "TSMMG":
-                    LLM = TSMMG(comps)
+                elif comps["LLM"] == "LlaSMol":
+                    LLM = LlaSMol(comps)
+                elif comps["LLM"] == "DrugAssist":
+                    LLM = Drug_Assist(comps)
             elif comps["LLM_type"] == "openrouter":
                 LLM = Open_Router(comps)
             elif comps["LLM_type"] == "gemini":
@@ -103,8 +106,7 @@ class Map_Optimizer:
         avg_overall = np.mean(scores)
         diversity_overall = island.diversity_evaluator(smis)
         
-        island_name = island.comps["name"]
-        print(f'{island_name} {island.n_generation}/{self.args.max_generations} | ' # 呼び出し回数と最大呼び出し回数を表示します。
+        print(f'{island.name} {island.n_generation}/{self.args.max_generations} | ' # 呼び出し回数と最大呼び出し回数を表示します。
                 f'top1%: {avg_top1:.3f} | '  
                 f'top10%: {avg_top10:.3f} | ' 
                 f'top50%: {avg_top50:.3f} | ' 
@@ -117,7 +119,7 @@ class Map_Optimizer:
         """
         print(f"Saving population...") # "Saving molecules..."と表示します。
 
-        output_dir = os.path.join(self.args.root_output_dir, island.comps["name"])
+        output_dir = os.path.join(self.args.root_output_dir, island.name)
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
         output_file_path = os.path.join(output_dir, 'population_' + suffix + '.yaml') # 接尾辞を付けた出力ファイルパスを設定します。
@@ -187,8 +189,8 @@ class Map_Optimizer:
                 if self.immigration():
                     immigration_source = self.select_immigration_source(idx)
                     immigrants = self.departure(island)
-                    source_name = self.islands[immigration_source].comps["name"]
-                    target_name = island.comps["name"]
+                    source_name = self.islands[immigration_source].name
+                    target_name = island.name
                     print(f"immigration : island{source_name} -> island{target_name}")
                     self.entry(island,immigrants)
 

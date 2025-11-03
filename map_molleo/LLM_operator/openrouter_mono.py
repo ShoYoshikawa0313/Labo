@@ -1,38 +1,49 @@
-import google.generativeai as genai
-import re
-import yaml
+from openai import OpenAI
 import json
 import random
 import time
-
+import re
 from rdkit import Chem
+from mol_data import Mol_Data
 
 MINIMUM = 1e-10
 
-genai.configure(api_key="AIzaSyB1yPa0EsQ21nfyVy_1uxm1UACtgkh_1aE")
-
-class Gemini:
+class Open_Router: 
     def __init__(self, composit):
-        self.model = genai.GenerativeModel(composit["LLM"])
+
+        self.model = composit["LLM"]
         self.request_interval = composit["interval"]
+
+        self.task = composit["task"]
         self.prompt_template = composit["prompt_template"]
         self.offspring_size = composit["offspring_size"]
 
+        self.client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key="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",
+        )
+
         self.last_request_time = time.time()
         
-    def request(self, prompt):
-        response = ""
+    def request(self, question):
+        message = [{"role": "system", "content": "You are a helpful agent who can answer the question based on your molecule knowledge."}]
+        message.append({"role": "user", "content": question})
+
+        response = None
         while(True):
             now = time.time()
             if now - self.last_request_time > self.request_interval:
                 try:
-                    response = self.model.generate_content(prompt).text
+                    response = self.client.chat.completions.create(
+                    model= self.model,
+                    messages = message
+                    ) 
                 except Exception as e:
                     print(f"{type(e).__name__} {e}")
-                    print(f"gemini request error")
+                    print(f"request error")
                     return None
                 self.last_request_time = now
-                return response                
+                return response.choices[0].message.content               
             else:
                 time.sleep(0.5)
 
@@ -41,6 +52,7 @@ class Gemini:
         Return a canonical smile representation of smi 
         """
         if smi == '':
+            print("No SMILES in JSON")
             return None
         smi = smi.replace("\\\\","\\")
         try:
@@ -65,52 +77,47 @@ class Gemini:
         try:
             data = json.loads(response_json)
         except Exception as e:
+            print(f"{type(e).__name__} {e}")
             print("Invalid JSON Error")
             return None
 
-        smis = []
-        for pair in data.keys():
-            smi = data[pair]["SMILES"]
-            smi = self.sanitize_smiles(smi)
-            if smi is not None: smis.append(smi)
-            else: smis.append("")
-
-        if len(smis) != self.offspring_size:
-            print("Not enough SMILES Error")
-            return None
-
-        return smis
+        smi = data["SMILES"] if data["SMILES"] is not None else ""
+        smi = self.sanitize_smiles(smi)
+        return smi
 
     def ramdom_parents(self, mating_list):
         parents = []
-        parent_info = ""
+        parent_infos = []
         for i in range(self.offspring_size):
             parentA = random.choice(mating_list)
             parentB = random.choice(mating_list)
             parents.append((parentA,parentB))
 
-            parent_info += f"Pair {i+1}:\n"
+            parent_info = ""
             parent_info += f"[ ParentA : {parentA.smi} , {parentA.score:.3f} ]\n"
             parent_info += f"[ ParentB : {parentB.smi} , {parentB.score:.3f} ]\n"
-        return parent_info, parents
 
+            parent_infos.append(parent_info)
+        return parent_infos, parents
+    
     def mating(self, mating_list: list):
-        while(True):
-            parent_info, parents = self.ramdom_parents(mating_list)
-            prompt = self.prompt_template.replace("<<<ParentInfo>>>",parent_info)
+        families = []
+        parent_infos, parents = self.ramdom_parents(mating_list)
+        for i in range(self.offspring_size):
+            prompt = self.prompt_template.replace("<<<ParentInfo>>>",parent_infos[i])
 
             response = self.request(prompt)
-            if response is None : continue
+            if response is None : 
+                print("Invalid Response")
+                continue
 
-            smis = self.response2smis(response)
-            if smis is None : continue
+            smi = self.response2smis(response)
+            if smi is None : 
+                print("Invalid SMILES")
+                continue
 
-            families = []
-            for i, smi in enumerate(smis):
-                if smi != "":
-                    print(f"{i} / {len(smis)} {smi}")
-                    families.append((smi, parents[i][0].smi, parents[i][1].smi))
-                else: print(f"{i} / {len(smis)} Invalid Smiles")
-
-            return families
+            print(f"{i} / {self.offspring_size} : {smi}")
+            families.append(Mol_Data(self.task,Chem.MolFromSmiles(smi),smi,parents[i][0].smi,parents[i][1].smi))
+            
+        return families
 

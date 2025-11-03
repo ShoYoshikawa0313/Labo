@@ -7,9 +7,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from statistics import mean
-from rdkit import Chem, DataStructs
+from rdkit import Chem, DataStructs, rdBase
 from rdkit.Chem import Draw, AllChem
 from rdkit.DataStructs import TanimotoSimilarity
+rdBase.DisableLog('rdApp.error')  # RDKitのエラーログを無効化
 from tdc import Evaluator
 
 from mol_data import Mol_Data
@@ -44,7 +45,7 @@ def results_load(input_dir, island):
             population = []
             for key in datas.keys():
                 data = datas[key]
-                population.append(Mol_Data(Chem.MolFromSmiles(data["smi"]),data["smi"],data["score"],data["parent1_smi"],data["parent2_smi"]))
+                population.append(Mol_Data(data["task"],Chem.MolFromSmiles(data["smi"]),data["smi"],data["parent1_smi"],data["parent2_smi"],data["inter_smi"]))
             island.populations.append(population)
 
             for mlc in population:
@@ -106,6 +107,28 @@ class Visualizer:
         plt.ylabel('Diversity')
         plt.grid(True)
         plt.savefig(output_path)
+
+    def plot_similarity(self):
+
+        print("start plot similarity histgram ...")
+
+        output_path = os.path.join(self.output_root_dir,"similarity_histgram.png")
+
+        similarities = []
+        for population in self.populations:
+            for mlc in population:
+                if len(mlc.similarities.keys()) == 0 : continue
+                similarities.append(max(mlc.similarities.values()))
+        
+        plt.figure(figsize=(10, 6))
+        plt.hist(similarities, bins=20, color='skyblue', edgecolor='black', range=(0, 1))
+        plt.title('Distribution of Molecule Similarities')
+        plt.xlabel('Similarity')
+        plt.ylabel('Frequency')
+        plt.xticks([i / 20 for i in range(21)])
+        plt.grid(axis='y', alpha=0.75)
+        plt.savefig(output_path)
+
 
     def visualize_crossover(self):
 
@@ -188,7 +211,7 @@ class Visualizer:
 
         return (avg_max_sim_1_to_2 + avg_max_sim_2_to_1) / 2.0
     
-    def plot_similarity(self, target_island):
+    def plot_islands_similarity(self, target_island):
 
         print("start plot similarity ...")
 
@@ -214,18 +237,11 @@ class Visualizer:
 
 # このブロックは、スクリプトが直接実行された場合にのみ実行されます。
 if __name__ == '__main__':
-
-    input_directory = 'results/gemini' 
     
     # Visualizerのインスタンスを作成します。
     visualizer_1 = Visualizer()
-    visualizer_2 = Visualizer()
 
-    #results_load("results/gemini",visualizer_1)
-    results_load("results/TSMMG",visualizer_1)
-    #results_load("results/BioT5",visualizer_2)
+    results_load("results/llama",visualizer_1)
 
-    #visualizer_1.plot_similarity(visualizer_2)
-    visualizer_1.plot_score_shift(5)
-    visualizer_1.visualize_crossover()
+    visualizer_1.plot_similarity()
 
