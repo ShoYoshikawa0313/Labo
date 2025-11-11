@@ -1,30 +1,24 @@
 import google.generativeai as genai
-import re
-import yaml
 import json
 import random
 import time
 
 from rdkit import Chem
 
+from mol_data import Mol_Data
+
 MINIMUM = 1e-10
 
 genai.configure(api_key="AIzaSyB1yPa0EsQ21nfyVy_1uxm1UACtgkh_1aE")
 
 class Gemini:
-    def __init__(self, args, model, interval):
+    def __init__(self, composit):
+        self.model = genai.GenerativeModel(composit["LLM"])
+        self.request_interval = composit["interval"]
 
-        self.args = args
-
-        self.request_interval = interval
-        self.model = genai.GenerativeModel(model)
-
-        self.prompt = None
-        with open(self.args.LLM_prompt, 'r', encoding='utf-8') as f:
-            self.prompt = yaml.safe_load(f)["LLM"]["original_batch"]
-
-        self.head = self.prompt["head"]["qed"]
-        self.tail = self.prompt["tail"]["qed"]
+        self.task = composit["task"]
+        self.prompt_template = composit["prompt_template"]
+        self.offspring_size = composit["offspring_size"]
 
         self.last_request_time = time.time()
         
@@ -48,7 +42,7 @@ class Gemini:
         """
         Return a canonical smile representation of smi 
         """
-        if smi == '':
+        if smi is None:
             return None
         smi = smi.replace("\\\\","\\")
         try:
@@ -83,7 +77,7 @@ class Gemini:
             if smi is not None: smis.append(smi)
             else: smis.append("")
 
-        if len(smis) != self.args.offspring_size:
+        if len(smis) != self.offspring_size:
             print("Not enough SMILES Error")
             return None
 
@@ -92,7 +86,7 @@ class Gemini:
     def ramdom_parents(self, mating_list):
         parents = []
         parent_info = ""
-        for i in range(self.args.offspring_size):
+        for i in range(self.offspring_size):
             parentA = random.choice(mating_list)
             parentB = random.choice(mating_list)
             parents.append((parentA,parentB))
@@ -102,10 +96,10 @@ class Gemini:
             parent_info += f"[ ParentB : {parentB.smi} , {parentB.score:.3f} ]\n"
         return parent_info, parents
 
-    def generational_shift(self, mating_list: list):
+    def mating(self, mating_list: list):
         while(True):
             parent_info, parents = self.ramdom_parents(mating_list)
-            prompt = self.head + parent_info + self.tail
+            prompt = self.prompt_template.replace("<<<ParentInfo>>>",parent_info)
 
             response = self.request(prompt)
             if response is None : continue
@@ -117,7 +111,7 @@ class Gemini:
             for i, smi in enumerate(smis):
                 if smi != "":
                     print(f"{i} / {len(smis)} {smi}")
-                    families.append((smi, parents[i][0].smi, parents[i][1].smi))
+                    families.append(Mol_Data(self.task,Chem.MolFromSmiles(smi),smi,parents[i][0].smi,parents[i][1].smi))
                 else: print(f"{i} / {len(smis)} Invalid Smiles")
 
             return families

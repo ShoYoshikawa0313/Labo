@@ -10,8 +10,9 @@ rdBase.DisableLog('rdApp.error')  # RDKitのエラーログを無効化
 from LLM_operator.biot5 import BioT5
 from LLM_operator.llaSMol import LlaSMol
 from LLM_operator.drug_assist import Drug_Assist
-from LLM_operator.openrouter_mono import Open_Router
 from LLM_operator.gemini import Gemini
+from LLM_operator.openrouter import Open_Router
+from LLM_operator.ollama import Ollama
 
 from generation import Generation 
 
@@ -35,13 +36,15 @@ class Map_Optimizer:
         for comps in composition:
             LLM = None
 
-            if comps["LLM_type"] == "clm":
-                if comps["LLM"] == "BioT5":
+            if comps["LLM"]["type"] == "clm":
+                if comps["LLM"]["name"] == "BioT5":
                     LLM = BioT5(comps)
                 elif comps["LLM"] == "LlaSMol":
                     LLM = LlaSMol(comps)
                 elif comps["LLM"] == "DrugAssist":
                     LLM = Drug_Assist(comps)
+            elif comps["LLM"]["type"] == "ollama":
+                LLM = Ollama(comps)
             elif comps["LLM_type"] == "openrouter":
                 LLM = Open_Router(comps)
             elif comps["LLM_type"] == "gemini":
@@ -122,11 +125,35 @@ class Map_Optimizer:
         output_dir = os.path.join(self.args.root_output_dir, island.name)
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
-        output_file_path = os.path.join(output_dir, 'population_' + suffix + '.yaml') # 接尾辞を付けた出力ファイルパスを設定します。
+
+        population_dir = os.path.join(output_dir, "population")
+        if not os.path.exists(population_dir):
+            os.mkdir(population_dir)
+        output_file_path = os.path.join(population_dir, 'population_' + suffix + '.yaml') # 接尾辞を付けた出力ファイルパスを設定します。
 
         with open(output_file_path, 'w') as f: # 出力ファイルを書き込みモードで開きます。
             # SMILESをキー、スコアを値とする辞書を作成します。
             result_dict = { mlc.smi : mlc.to_dict() for mlc in island.population}
+            yaml.dump(result_dict, f, sort_keys=False) # 作成した辞書をYAML形式でファイルに書き込みます。
+
+    def save_offspring(self, island, suffix=None): # 結果を保存するメソッドです。
+        """
+        最適化によって得られた分子とそのスコアをYAMLファイルに保存します。
+        """
+        print(f"Saving Child...") # "Saving molecules..."と表示します。
+
+        output_dir = os.path.join(self.args.root_output_dir, island.name)
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+
+        offspring_dir = os.path.join(output_dir, "offspring")
+        if not os.path.exists(offspring_dir):
+            os.mkdir(offspring_dir)
+        output_file_path = os.path.join(offspring_dir, 'offspring_' + suffix + '.yaml') # 接尾辞を付けた出力ファイルパスを設定します。
+
+        with open(output_file_path, 'w') as f: # 出力ファイルを書き込みモードで開きます。
+            # SMILESをキー、スコアを値とする辞書を作成します。
+            result_dict = { mlc.smi : mlc.to_dict() for mlc in island.offspring}
             yaml.dump(result_dict, f, sort_keys=False) # 作成した辞書をYAML形式でファイルに書き込みます。
     
     def calculate_population_similarity(population1, population2):
@@ -183,6 +210,7 @@ class Map_Optimizer:
 
                 self.log_intermediate(island)
                 self.save_population(island,f"{island.n_generation}G")
+                self.save_offspring(island,f"{island.n_generation}G")
 
                 if self.island_early_stop(island): continue
 

@@ -1,6 +1,6 @@
 import random
-from openai import OpenAI
-import re
+import requests
+
 from rdkit import Chem
 
 # 自作モジュールのインポート
@@ -10,17 +10,15 @@ from mol_data import Mol_Data
 from rdkit.Chem import AllChem
 from rdkit.DataStructs import TanimotoSimilarity
 
-class Mistral:
+class BioT5:
     def __init__(self, composit):
         
         self.task = composit["task"]
         self.offspring_size = composit["offspring_size"]
         self.task_definition = composit["prompt_template"]
 
-        self.client = OpenAI(
-            base_url = 'http://10.34.35.193:11431/v1',
-            api_key='ollama', # required, but unused
-        )
+        self.base_url = "http://10.34.35.194:5000"
+        self.endpoint = "/biot5/"
     
     def sanitize_smiles(self, smi):
         """
@@ -35,34 +33,34 @@ class Mistral:
         except:
             return None
 
-    def mistral_request(self,smi,task):
-
-        prompt = task.replace("<<<SMILES>>>",smi)
+    def biot5_request(self,smi,task):
 
         params = {
-            "model": "drugassist-instruct",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "stream": False,
+        "smiles": smi,
+        "task": task
         }
 
         try:
-            # リクエストを送信
-            response = self.client.chat.completions.create(**params).choices[0].message.content
-            print(response)
-            return re.findall(r'"([^"]*)"',response)[0]
+            # GETリクエストを送信
+            response = requests.get(f"{self.base_url}{self.endpoint}", params=params)
+            # ステータスコードをチェックして、リクエストが失敗した場合に例外を発生させる
+            response.raise_for_status()
+            # サーバーからの応答をJSONからPythonの辞書に変換して返す
+            return response.json()["smiles"]
 
-        except Exception as e:
-            print("Invalid Response")
+        except requests.exceptions.HTTPError as http_err:
+            print(f"An HTTP error occurred: {http_err}")
+            print(f"Response body: {response.text}")
+        except requests.exceptions.ConnectionError as conn_err:
+            print(f"A connection error occurred: {conn_err}")
+            print("Please check if the Flask server is running and the URL is correct.")
+        except requests.exceptions.RequestException as req_err:
+            print(f"An unexpected request error occurred: {req_err}")
 
         return ""
 
     def edit_smi(self, smi):
-        response = self.llama_request(smi, self.task_definition)
+        response = self.biot5_request(smi, self.task_definition)
         proposed_smiles = self.sanitize_smiles(response)
 
         if proposed_smiles is not None: return proposed_smiles
@@ -94,26 +92,28 @@ class Mistral:
     def mating(self, mating_list: list):
         families = []
         for i in range(self.offspring_size):
-            # Step 1 交叉という標準的な遺伝的操作を用いて、ベースとなる子孫集団を生成
-            # メイティングプールから親を選択し、交叉を繰り返して指定された数の子孫候補を生成します。
-            inter_smi, parent1_smi, parent2_smi = self.reproduce(mating_list)
-            # Step 2 スコアが上位の優れた親分子をBioT5モデルに入力し、より有望な化学構造空間を探索するために分子を「編集」させる
-            # BioT5モデルで編集させます。
-            offspring_smi = self.edit_smi(inter_smi)
-            print(f"{i} / {self.offspring_size} : {inter_smi} => {offspring_smi} {self.similarity(inter_smi,offspring_smi)}")
-            families.append(Mol_Data(self.task,Chem.MolFromSmiles(offspring_smi),offspring_smi,parent1_smi,parent2_smi,inter_smi))
-            
+            while(True):
+                inter_smi, parent1_smi, parent2_smi = self.reproduce(mating_list)
+                offspring_smi = self.edit_smi(inter_smi)
+                if offspring_smi is None: continue
+                print(f"{i} / {self.offspring_size} : {inter_smi} => {offspring_smi} {self.similarity(inter_smi,offspring_smi)}")
+                families.append(Mol_Data(self.task,Chem.MolFromSmiles(offspring_smi),offspring_smi,parent1_smi,parent2_smi,inter_smi))
+                break
         return families
     
     def test(self,parents):
         new_child = co.crossover(parents[0].mol, parents[1].mol)
         new_child_smi = Chem.MolToSmiles(new_child) if Chem.MolToSmiles(new_child) is not None else parents[0].smi
 
-        response = self.mistral_request(new_child_smi, self.task_definition)
+        response = self.biot5_request(new_child_smi, self.task_definition)
         if response == "":return "RESPONSE"
         proposed_smiles = self.sanitize_smiles(response)
         if proposed_smiles is None:return "SMILES"
 
         return proposed_smiles,new_child_smi,self.similarity(proposed_smiles,new_child_smi)
+
+        
+
+
 
 

@@ -2,7 +2,7 @@ from openai import OpenAI
 import json
 import random
 import time
-import re
+
 from rdkit import Chem
 from mol_data import Mol_Data
 
@@ -52,7 +52,6 @@ class Open_Router:
         Return a canonical smile representation of smi 
         """
         if smi == '':
-            print("No SMILES in JSON")
             return None
         smi = smi.replace("\\\\","\\")
         try:
@@ -81,43 +80,51 @@ class Open_Router:
             print("Invalid JSON Error")
             return None
 
-        smi = data["SMILES"] if data["SMILES"] is not None else ""
-        smi = self.sanitize_smiles(smi)
-        return smi
+        smis = []
+        for pair in data.keys():
+            smi = data[pair]["SMILES"]
+            smi = self.sanitize_smiles(smi)
+            if smi is not None: smis.append(smi)
+            else: smis.append("")
+
+        if len(smis) != self.offspring_size:
+            print("Not enough SMILES Error")
+            return None
+
+        return smis
 
     def ramdom_parents(self, mating_list):
         parents = []
-        parent_infos = []
+        parent_info = ""
         for i in range(self.offspring_size):
             parentA = random.choice(mating_list)
             parentB = random.choice(mating_list)
             parents.append((parentA,parentB))
 
-            parent_info = ""
+            parent_info += f"Pair {i+1}:\n"
             parent_info += f"[ ParentA : {parentA.smi} , {parentA.score:.3f} ]\n"
             parent_info += f"[ ParentB : {parentB.smi} , {parentB.score:.3f} ]\n"
-
-            parent_infos.append(parent_info)
-        return parent_infos, parents
+        return parent_info, parents
     
-    def mating(self, mating_list: list):
-        families = []
-        parent_infos, parents = self.ramdom_parents(mating_list)
-        for i in range(self.offspring_size):
-            prompt = self.prompt_template.replace("<<<ParentInfo>>>",parent_infos[i])
+    def mating(self, mating_list):
+        while(True):
+            parent_info, parents = self.ramdom_parents(mating_list)
+            prompt = self.prompt_template.replace("<<<ParentInfo>>>",parent_info)
 
             response = self.request(prompt)
-            if response is None : 
-                print("Invalid Response")
-                continue
+            if response is None : continue
 
-            smi = self.response2smis(response)
-            if smi is None : 
-                print("Invalid SMILES")
-                continue
+            smis = self.response2smis(response)
+            if smis is None : continue
 
-            print(f"{i} / {self.offspring_size} : {smi}")
-            families.append(Mol_Data(self.task,Chem.MolFromSmiles(smi),smi,parents[i][0].smi,parents[i][1].smi))
-            
-        return families
+            families = []
+            for i, smi in enumerate(smis):
+                if smi != "":
+                    print(f"{i} / {len(smis)} {smi}")
+                    families.append(Mol_Data(self.task,Chem.MolFromSmiles(smi),smi,parents[i][0].smi,parents[i][1].smi))
+                else: print(f"{i} / {len(smis)} Invalid Smiles")
+
+            return families
+                
+        
 

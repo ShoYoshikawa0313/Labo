@@ -42,7 +42,7 @@ class Gemini:
         """
         Return a canonical smile representation of smi 
         """
-        if smi == '':
+        if smi is None:
             return None
         smi = smi.replace("\\\\","\\")
         try:

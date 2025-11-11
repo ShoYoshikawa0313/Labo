@@ -10,7 +10,7 @@ from mol_data import Mol_Data
 from rdkit.Chem import AllChem
 from rdkit.DataStructs import TanimotoSimilarity
 
-class Llama:
+class Drug_Assist:
     def __init__(self, composit):
         
         self.task = composit["task"]
@@ -18,7 +18,7 @@ class Llama:
         self.task_definition = composit["prompt_template"]
 
         self.client = OpenAI(
-            base_url = 'http://10.34.35.193:11435/v1',
+            base_url = 'http://10.34.35.193:11434/v1',
             api_key='ollama', # required, but unused
         )
     
@@ -35,7 +35,7 @@ class Llama:
         except:
             return None
 
-    def llama_request(self,smi,task):
+    def drug_assist_request(self,smi,task):
 
         prompt = task.replace("<<<SMILES>>>",smi)
 
@@ -53,7 +53,6 @@ class Llama:
         try:
             # リクエストを送信
             response = self.client.chat.completions.create(**params).choices[0].message.content
-            print(response)
             return re.findall(r'"([^"]*)"',response)[0]
 
         except Exception as e:
@@ -62,7 +61,7 @@ class Llama:
         return ""
 
     def edit_smi(self, smi):
-        response = self.llama_request(smi, self.task_definition)
+        response = self.drug_assist_request(smi, self.task_definition)
         proposed_smiles = self.sanitize_smiles(response)
 
         if proposed_smiles is not None: return proposed_smiles
@@ -94,22 +93,20 @@ class Llama:
     def mating(self, mating_list: list):
         families = []
         for i in range(self.offspring_size):
-            # Step 1 交叉という標準的な遺伝的操作を用いて、ベースとなる子孫集団を生成
-            # メイティングプールから親を選択し、交叉を繰り返して指定された数の子孫候補を生成します。
-            inter_smi, parent1_smi, parent2_smi = self.reproduce(mating_list)
-            # Step 2 スコアが上位の優れた親分子をBioT5モデルに入力し、より有望な化学構造空間を探索するために分子を「編集」させる
-            # BioT5モデルで編集させます。
-            offspring_smi = self.edit_smi(inter_smi)
-            print(f"{i} / {self.offspring_size} : {inter_smi} => {offspring_smi} {self.similarity(inter_smi,offspring_smi)}")
-            families.append(Mol_Data(self.task,Chem.MolFromSmiles(offspring_smi),offspring_smi,parent1_smi,parent2_smi,inter_smi))
-            
+            while(True):
+                inter_smi, parent1_smi, parent2_smi = self.reproduce(mating_list)
+                offspring_smi = self.edit_smi(inter_smi)
+                if offspring_smi is None: continue
+                print(f"{i} / {self.offspring_size} : {inter_smi} => {offspring_smi} {self.similarity(inter_smi,offspring_smi)}")
+                families.append(Mol_Data(self.task,Chem.MolFromSmiles(offspring_smi),offspring_smi,parent1_smi,parent2_smi,inter_smi))
+                break
         return families
     
     def test(self,parents):
         new_child = co.crossover(parents[0].mol, parents[1].mol)
         new_child_smi = Chem.MolToSmiles(new_child) if Chem.MolToSmiles(new_child) is not None else parents[0].smi
 
-        response = self.llama_request(new_child_smi, self.task_definition)
+        response = self.drug_assist_request(new_child_smi, self.task_definition)
         if response == "":return "RESPONSE"
         proposed_smiles = self.sanitize_smiles(response)
         if proposed_smiles is None:return "SMILES"

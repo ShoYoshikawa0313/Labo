@@ -138,7 +138,3 @@ class Evaluator():
         plt.grid(axis='y', alpha=0.75)
         # 変更箇所: パスを "results/scores.png" に変更
         plt.savefig(os.path.join(output_dir, "scores.png"))
-            
-print("hello")
-#E = Evaluator("test4")
-#E.evaluate(100)

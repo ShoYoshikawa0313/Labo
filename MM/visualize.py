@@ -2,56 +2,63 @@ import yaml
 import glob
 import os
 import tqdm
-import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from statistics import mean
 from rdkit import Chem, DataStructs, rdBase
 from rdkit.Chem import Draw, AllChem
-from rdkit.DataStructs import TanimotoSimilarity
-rdBase.DisableLog('rdApp.error')  # RDKitのエラーログを無効化
+rdBase.DisableLog('rdApp.*')  # RDKitのエラーログを無効化
 from tdc import Evaluator
 
 from mol_data import Mol_Data
 
-def results_load(input_dir, island):
-    # 指定されたディレクトリ内で'population_'で始まるすべてのYAMLファイルを検索します。
-    yaml_files = glob.glob(os.path.join(input_dir, 'population_*.yaml'))
-    island.num_generation = len(yaml_files)
 
-    def get_generation_number(filepath):
-        """
-        ファイル名から世代番号を抽出するためのヘルパー関数です。
-        """
-        filename = os.path.basename(filepath)
-        # ファイル名の形式は 'population_{世代番号}G.yaml' を想定しています。
-        try:
-            # 世代番号の文字列を抽出し、整数に変換します。
-            gen_str = filename.split('_')[1].replace('G.yaml', '')
-            return int(gen_str)
-        except (IndexError, ValueError):
-            # ファイル名が期待される形式でない場合は-1を返します。
-            return -1
+class Island:
+    def __init__(self, input_dir):
+        self.populations = []
+        self.smi2mlc = {}
+        self.num_generation = 0
 
-    # 世代番号に基づいてYAMLファイルをソートし、時系列順に処理できるようにします。
-    yaml_files.sort(key=get_generation_number)
+        self.load(input_dir)
 
-    # ソートされたファイルリストをループ処理し、YAMLデータを読み込んで結果リストに追加します。
-    print("Loading results ...")
-    for yaml_file in tqdm.tqdm(yaml_files):
-        with open(yaml_file, 'r', encoding='utf-8') as f:
-            datas = yaml.safe_load(f) #datas : {smi, Mol_data} の世代集合
-            population = []
-            for key in datas.keys():
-                data = datas[key]
-                population.append(Mol_Data(data["task"],Chem.MolFromSmiles(data["smi"]),data["smi"],data["parent1_smi"],data["parent2_smi"],data["inter_smi"]))
-            island.populations.append(population)
+    def load(self,input_dir):
+        # 指定されたディレクトリ内で'population_'で始まるすべてのYAMLファイルを検索します。
+        yaml_files = glob.glob(os.path.join(input_dir, 'population_*.yaml'))
+        self.num_generation = len(yaml_files)
 
-            for mlc in population:
-                if mlc.smi not in island.smi2mlc:
-                    island.smi2mlc[mlc.smi] = mlc
+        def get_generation_number(filepath):
+            """
+            ファイル名から世代番号を抽出するためのヘルパー関数です。
+            """
+            filename = os.path.basename(filepath)
+            # ファイル名の形式は 'population_{世代番号}G.yaml' を想定しています。
+            try:
+                # 世代番号の文字列を抽出し、整数に変換します。
+                gen_str = filename.split('_')[1].replace('G.yaml', '')
+                return int(gen_str)
+            except (IndexError, ValueError):
+                # ファイル名が期待される形式でない場合は-1を返します。
+                return -1
 
+        # 世代番号に基づいてYAMLファイルをソートし、時系列順に処理できるようにします。
+        yaml_files.sort(key=get_generation_number)
+
+        # ソートされたファイルリストをループ処理し、YAMLデータを読み込んで結果リストに追加します。
+        print("Loading results ...")
+        for yaml_file in yaml_files:
+            with open(yaml_file, 'r', encoding='utf-8') as f:
+                datas = yaml.safe_load(f) #datas : {smi, Mol_data} の世代集合
+                population = []
+                for key in datas.keys():
+                    data = datas[key]
+                    population.append(Mol_Data(data["task"],Chem.MolFromSmiles(data["smi"]),data["smi"],data["parent1_smi"],data["parent2_smi"],data["inter_smi"]))
+                self.populations.append(population)
+
+                for mlc in population:
+                    if mlc.smi not in self.smi2mlc:
+                        self.smi2mlc[mlc.smi] = mlc
+
+        print("Loading finished")
 class Visualizer:
     """
     遺伝的アルゴリズムによる最適化の結果を可視化するためのクラスです。
@@ -65,14 +72,9 @@ class Visualizer:
         if not os.path.exists(self.output_root_dir):
                 os.mkdir(self.output_root_dir)
 
-        self.populations = []
-        self.populations_sub = []
-        self.smi2mlc = {}
-        self.num_generation = 0
-
         self.diversity_evaluator = Evaluator(name = 'Diversity')
             
-    def plot_score_shift(self, freq):
+    def plot_score_shift(self,island,freq):
 
         print("start plot score shift ...")
 
@@ -80,7 +82,7 @@ class Visualizer:
 
         plt.figure(figsize=(12, 8))
         # 各世代のデータについて、スコアの分布をプロットします。
-        for i, population in enumerate(self.populations):
+        for i, population in enumerate(island.populations):
             if i % freq == 0:
                 # YAMLから読み込まれた辞書のバリューがスコアです。
                 scores = [mlc.score for mlc in population]
@@ -89,14 +91,14 @@ class Visualizer:
         plt.legend()
         plt.savefig(output_path)
 
-    def plot_diversity_shift(self):
+    def plot_diversity_shift(self,island):
         
         print("start plot diversity shift ...")
 
         output_path = os.path.join(self.output_root_dir,"diversity_shift.png")
 
         diversities = []
-        for population in self.populations:
+        for population in island.populations:
             smis = [mlc.smi for mlc in population]
             diversities.append(self.diversity_evaluator(smis))
 
@@ -108,14 +110,14 @@ class Visualizer:
         plt.grid(True)
         plt.savefig(output_path)
 
-    def plot_similarity(self):
+    def plot_similarity_histgram(self,island):
 
         print("start plot similarity histgram ...")
 
         output_path = os.path.join(self.output_root_dir,"similarity_histgram.png")
 
         similarities = []
-        for population in self.populations:
+        for population in island.populations:
             for mlc in population:
                 if len(mlc.similarities.keys()) == 0 : continue
                 similarities.append(max(mlc.similarities.values()))
@@ -129,8 +131,7 @@ class Visualizer:
         plt.grid(axis='y', alpha=0.75)
         plt.savefig(output_path)
 
-
-    def visualize_crossover(self):
+    def visualize_crossover(self, island):
 
         print("start visualize crossover ...")
 
@@ -139,7 +140,7 @@ class Visualizer:
                 os.mkdir(output_dir)
         
         num_G = 0
-        for population in tqdm.tqdm(self.populations):
+        for population in tqdm.tqdm(island.populations):
             output_gene_dir = os.path.join(output_dir, f"population_{num_G}G")
             if not os.path.exists(output_gene_dir):
                 os.mkdir(output_gene_dir)
@@ -150,12 +151,8 @@ class Visualizer:
                     parent1 = self.smi2mlc[offspring.parent1_smi]
                     parent2 = self.smi2mlc[offspring.parent2_smi]
 
-                    fp_parent1 = AllChem.GetMorganFingerprintAsBitVect(parent1.mol, 2, nBits=1024)
-                    fp_parent2 = AllChem.GetMorganFingerprintAsBitVect(parent2.mol, 2, nBits=1024)
-                    fp_offspring = AllChem.GetMorganFingerprintAsBitVect(offspring.mol, 2, nBits=1024)
-
-                    sim_p1_off = TanimotoSimilarity(fp_parent1, fp_offspring)
-                    sim_p2_off = TanimotoSimilarity(fp_parent2, fp_offspring)
+                    sim_p1_off = mlc.similarities["parent1"]
+                    sim_p2_off = mlc.similarities["parent2"]
 
                     family = [parent1.mol, parent2.mol, offspring.mol]
                     legends = [f"parent1 score : {parent1.score:.3f}",
@@ -169,7 +166,7 @@ class Visualizer:
                     img.save(output_path)
             num_G += 1
 
-    def calculate_population_similarity(self, population1, population2):
+    def population_similarity(self, population1, population2):
         """
         2つのpopulation間の類似度を「最大類似度の平均」を用いて計算します。
         具体的には、一方の集団の各個体について、もう一方の集団における最も類似度の高い個体との類似度（最大類似度）を求め、
@@ -211,18 +208,18 @@ class Visualizer:
 
         return (avg_max_sim_1_to_2 + avg_max_sim_2_to_1) / 2.0
     
-    def plot_islands_similarity(self, target_island):
+    def plot_islands_similarity_shift(self, island1, island2):
 
         print("start plot similarity ...")
 
         similarities = []
 
-        max_generation_len = max(self.num_generation, target_island.num_generation)
+        max_generation_len = max(island1.num_generation, island2.num_generation)
 
         for idx in range(max_generation_len):
-            population1 = self.populations[idx] if self.num_generation > idx else self.populations[-1] 
-            population2 = target_island.populations[idx] if target_island.num_generation > idx else target_island.populations[-1]
-            similarities.append(self.calculate_population_similarity(population1,population2)) 
+            population1 = island1.populations[idx] if island1.num_generation > idx else island1.populations[-1] 
+            population2 = island2.populations[idx] if island2.num_generation > idx else island2.populations[-1]
+            similarities.append(self.population_similarity(population1,population2)) 
 
         output_path = os.path.join(self.output_root_dir,"similarity.png")
 
@@ -234,14 +231,4 @@ class Visualizer:
         plt.grid(True)
         plt.savefig(output_path)
 
-
-# このブロックは、スクリプトが直接実行された場合にのみ実行されます。
-if __name__ == '__main__':
-    
-    # Visualizerのインスタンスを作成します。
-    visualizer_1 = Visualizer()
-
-    results_load("results/llama",visualizer_1)
-
-    visualizer_1.plot_similarity()
 
