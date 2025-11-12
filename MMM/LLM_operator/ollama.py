@@ -1,8 +1,8 @@
 import random
 import requests
 import re
-
 from rdkit import Chem
+from tqdm import tqdm
 
 
 class Ollama:
@@ -30,15 +30,14 @@ class Ollama:
             smi_canon = Chem.MolToSmiles(mol, isomericSmiles=False, canonical=True)
             return smi_canon
         except:
-            print(f"Invalid SMILES : {smi}")
+            #print(f"Invalid SMILES : {smi}")
             return None
         
     def response2smi(self, response):
-        print(response)
         contents = response.split('"SMILES"',1)[1]
         smis = re.findall(r'"([^"]*)"',contents)
         if len(smis) != 1:
-            print("Invalid Contents")
+            #print("Invalid Contents")
             return None
         smi = smis[0]
         clean_smi = self.sanitize_smiles(smi)
@@ -58,7 +57,9 @@ class Ollama:
         }
 
         if self.model_name == "deepseek-r1:8b" or self.model_name == "qwen3:8b": params["think"] = False
-        if self.model_name == "gpt-oss:20b": params["think"] = "low"
+        if self.model_name == "gpt-oss:20b": 
+            params["think"] = "low"
+            params["options"]["num_predict"] = 256
 
         try:
             # POSTリクエストを送信
@@ -70,8 +71,8 @@ class Ollama:
             return response_dict["model"], self.response2smi(response_dict["response"])
 
         except Exception as e:
-            print(f"{type(e).__name__} {e}")
-            print("Invalid Response")
+            #print(f"{type(e).__name__} {e}")
+            #print("Invalid Response")
             return None,None
     
     def ramdom_parents(self, mating_list):
@@ -85,7 +86,8 @@ class Ollama:
 
     def mating(self, mating_list: list):
         families = []
-        for i in range(self.offspring_size):
+        log = ""
+        for i in tqdm(range(self.offspring_size), desc=f"mating in {self.model_name}"):
             while(True):
                 self.num_try += 1
                 parents_info, parent1_smi, parent2_smi = self.ramdom_parents(mating_list)
@@ -93,8 +95,9 @@ class Ollama:
                 if offspring_smi is None:
                     self.num_error += 1
                     continue
-                print(f"{i} / {self.offspring_size} : {response_model} {offspring_smi}")
+                log +=  f"\n{i} / {self.offspring_size} : {response_model} {offspring_smi}"
                 families.append({"offspring":offspring_smi, "parent1":parent1_smi, "parent2":parent2_smi})
                 break
-        print(f"error/try : {self.num_error}/{self.num_try}")
+        log += f"\n\nerror/try : {self.num_error}/{self.num_try}"
+        #print(log)
         return families

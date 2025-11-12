@@ -1,4 +1,6 @@
-import tqdm
+import math
+import os
+import yaml
 import numpy as np  # 数値計算に使用
 
 from rdkit import Chem, rdBase  # 分子操作のためのRDKitライブラリ
@@ -16,10 +18,11 @@ class Island():
     遺伝的アルゴリズム（GA）をベースとした分子最適化を実行するクラス。
     '''
 
-    def __init__(self, LLM, evaluator, composit):
+    def __init__(self, LLM, evaluator, root_output_dir, composit):
 
         self.LLM = LLM
         self.evaluator = evaluator
+        self.root_output_dir = root_output_dir
 
         self.name = composit["name"]
         self.population_size = composit["population_size"]
@@ -42,7 +45,7 @@ class Island():
     def make_initial_population(self):
         initial_smis = np.random.choice(self.all_smiles, self.population_size).tolist() 
         initial_population = []
-        for smi in tqdm.tqdm(initial_smis):
+        for smi in initial_smis:
             mol = Chem.MolFromSmiles(smi)
             initial_population.append(Mol_Data(mol,smi,self.evaluator.score(smi)))
         initial_population.sort(reverse=True)
@@ -121,8 +124,74 @@ class Island():
             return True
 
         return False
+    
+    def log_intermediate(self): # 中間結果をログに出力するメソッドです。
+        """
+        最適化プロセスの途中経過をコンソールに出力します。
+        """
+        len_mlcs = float(len(self.population))
+        sorted_mlcs = sorted(self.population, reverse=True)
+        scores = [mlc.score for mlc in sorted_mlcs]
+        smis = [mlc.smi for mlc in sorted_mlcs]
+
+        avg_top1 = np.max(scores[: math.ceil(len_mlcs*0.01)])
+        avg_top10 = np.mean(scores[: math.ceil(len_mlcs*0.1)])
+        avg_top50 = np.mean(scores[: math.ceil(len_mlcs*0.5)])
+        avg_overall = np.mean(scores)
+        diversity_overall = self.evaluator.diversity(smis)
+        
+        print(f' {self.name} {self.n_generation} | ' # 呼び出し回数と最大呼び出し回数を表示します。
+                f'top1%: {avg_top1:.3f} | '  
+                f'top10%: {avg_top10:.3f} | ' 
+                f'top50%: {avg_top50:.3f} | ' 
+                f'Overall: {avg_overall:.3f} | ' 
+                f'div: {diversity_overall:.3f}  ' + 50*"-")
+        
+    def save_population(self, suffix=None): # 結果を保存するメソッドです。
+        """
+        最適化によって得られた分子とそのスコアをYAMLファイルに保存します。
+        """
+
+        output_dir = os.path.join(self.root_output_dir, self.name)
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+
+        population_dir = os.path.join(output_dir, "population")
+        if not os.path.exists(population_dir):
+            os.mkdir(population_dir)
+
+        output_file_path = os.path.join(population_dir, 'population_' + suffix + '.yaml') # 接尾辞を付けた出力ファイルパスを設定します。
+
+        with open(output_file_path, 'w') as f: # 出力ファイルを書き込みモードで開きます。
+            # SMILESをキー、スコアを値とする辞書を作成します。
+            result_dict = { mlc.smi : mlc.to_dict() for mlc in self.population}
+            yaml.dump(result_dict, f, sort_keys=False) # 作成した辞書をYAML形式でファイルに書き込みます。
+
+    def save_offspring(self, suffix=None): # 結果を保存するメソッドです。
+        """
+        最適化によって得られた分子とそのスコアをYAMLファイルに保存します。
+        """
+
+        output_dir = os.path.join(self.root_output_dir, self.name)
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+
+        offspring_dir = os.path.join(output_dir, "offspring")
+        if not os.path.exists(offspring_dir):
+            os.mkdir(offspring_dir)
+
+        output_file_path = os.path.join(offspring_dir, 'offspring_' + suffix + '.yaml') # 接尾辞を付けた出力ファイルパスを設定します。
+
+        with open(output_file_path, 'w') as f: # 出力ファイルを書き込みモードで開きます。
+            # SMILESをキー、スコアを値とする辞書を作成します。
+            result_dict = { mlc.smi : mlc.to_dict() for mlc in self.offspring}
+            yaml.dump(result_dict, f, sort_keys=False) # 作成した辞書をYAML形式でファイルに書き込みます。
 
     def generational_shift(self):
+
+        self.log_intermediate()
+        self.save_population(f"{self.n_generation}G")
+
         next_population = self.population[:]
 
         # スコアに基づいて親集団（メイティングプール）を形成
@@ -143,4 +212,6 @@ class Island():
         self.scores.append(avg_score)
 
         self.population = next_population
+
+        self.save_offspring(f"{self.n_generation}G")
         self.n_generation += 1
