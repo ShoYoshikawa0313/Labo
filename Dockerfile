@@ -26,4 +26,4 @@ ENV GEMINI_API_KEY = "AIzaSyDtPTdv09dxyLs59ZCftJu0TLpXbbN-M1k"
 COPY requirements.txt .
 
 # requirements.txtを使ってpipでライブラリをインストール
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --timeout=100 -r requirements.txt

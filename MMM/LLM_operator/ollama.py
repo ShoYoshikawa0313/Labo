@@ -43,7 +43,7 @@ class Ollama:
         clean_smi = self.sanitize_smiles(smi)
         return clean_smi
 
-    def request(self,parents_info,stop=False):
+    def request(self,parents_info):
 
         params = {
         "model": self.model_name,
@@ -87,7 +87,7 @@ class Ollama:
     def mating(self, mating_list: list):
         families = []
         log = ""
-        for i in tqdm(range(self.offspring_size), desc=f"mating in {self.model_name}"):
+        for i in tqdm(range(self.offspring_size), desc=f"{self.model_name}  "):
             while(True):
                 self.num_try += 1
                 parents_info, parent1_smi, parent2_smi = self.ramdom_parents(mating_list)

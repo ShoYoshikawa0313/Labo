@@ -1,73 +1,70 @@
 import random
-from openai import OpenAI
+import requests
 import re
 from rdkit import Chem
+from tqdm import tqdm
 
 # 自作モジュールのインポート
 import LLM_operator.crossover as co
-from mol_data import Mol_Data
-
-from rdkit.Chem import AllChem
-from rdkit.DataStructs import TanimotoSimilarity
 
 class Drug_Assist:
     def __init__(self, composit):
         
-        self.task = composit["task"]
         self.offspring_size = composit["offspring_size"]
-        self.task_definition = composit["prompt_template"]
+        self.prompt_template = composit["prompt_template"]
+        self.model_name = composit["LLM"]["name"]
 
-        self.client = OpenAI(
-            base_url = 'http://10.34.35.193:11434/v1',
-            api_key='ollama', # required, but unused
-        )
+        self.max_length = 100
+        self.base_url = composit["LLM"]["URL"]
+        self.endpoint = "/api/generate"
+
+        self.num_try = 0
+        self.num_error = 0
     
     def sanitize_smiles(self, smi):
         """
         Return a canonical smile representation of smi 
         """
-        if smi == '':
+        if smi is None or smi == "":
             return None
         try:
             mol = Chem.MolFromSmiles(smi, sanitize=True)
             smi_canon = Chem.MolToSmiles(mol, isomericSmiles=False, canonical=True)
             return smi_canon
         except:
+            #print(f"Invalid SMILES : {smi}")
             return None
-
-    def drug_assist_request(self,smi,task):
-
-        prompt = task.replace("<<<SMILES>>>",smi)
+        
+    def response2smi(self, response):
+        smi = re.findall(r'"([^"]*)"',response)[0]
+        clean_smi = self.sanitize_smiles(smi)
+        return clean_smi
+    
+    def request(self,smi):
 
         params = {
-            "model": "drugassist-instruct",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "stream": False,
+        "model": self.model_name,
+        "prompt": self.prompt_template.replace("<<<SMILES>>>",smi),
+        "keep_alive": 10,
+        "stream": False,
+        "options": {
+            "num_predict": self.max_length
+        }
         }
 
         try:
-            # リクエストを送信
-            response = self.client.chat.completions.create(**params).choices[0].message.content
-            return re.findall(r'"([^"]*)"',response)[0]
+            # POSTリクエストを送信
+            response = requests.post(f"{self.base_url}{self.endpoint}", json=params)
+            # ステータスコードをチェックして、リクエストが失敗した場合に例外を発生させる
+            response.raise_for_status()
+            # サーバーからの応答をJSONからPythonの辞書に変換する
+            response_dict = response.json()
+            return response_dict["model"], self.response2smi(response_dict["response"])
 
         except Exception as e:
-            print("Invalid Response")
-
-        return ""
-
-    def edit_smi(self, smi):
-        response = self.drug_assist_request(smi, self.task_definition)
-        proposed_smiles = self.sanitize_smiles(response)
-
-        if proposed_smiles is not None: return proposed_smiles
-        else:
-            print("Invalid mutation.")
-            return smi
+            #print(f"{type(e).__name__} {e}")
+            #print("Invalid Response")
+            return None,None
     
     def reproduce(self, mating_list: list):
         while(True):
@@ -85,32 +82,22 @@ class Drug_Assist:
             except:
                 print("Error : Invalid crossover in reproduce")
     
-    def similarity(self, smi1, smi2):
-        fp_smi1 = AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(smi1), 2, nBits=1024)
-        fp_smi2 = AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(smi2), 2, nBits=1024)
-        return TanimotoSimilarity(fp_smi1,fp_smi2)
-    
     def mating(self, mating_list: list):
         families = []
-        for i in range(self.offspring_size):
+        log = ""
+        for i in tqdm(range(self.offspring_size), desc=f"{self.model_name}  "):
             while(True):
+                self.num_try += 1
                 inter_smi, parent1_smi, parent2_smi = self.reproduce(mating_list)
-                offspring_smi = self.edit_smi(inter_smi)
-                if offspring_smi is None: continue
-                print(f"{i} / {self.offspring_size} : {inter_smi} => {offspring_smi} {self.similarity(inter_smi,offspring_smi)}")
-                families.append(Mol_Data(self.task,Chem.MolFromSmiles(offspring_smi),offspring_smi,parent1_smi,parent2_smi,inter_smi))
+                response_model, offspring_smi = self.request(inter_smi)
+                if offspring_smi is None:
+                    self.num_error += 1
+                    continue
+                log +=  f"\n{i} / {self.offspring_size} : {response_model} {offspring_smi}"
+                families.append({"offspring":offspring_smi, "parent1":parent1_smi, "parent2":parent2_smi, "inter":inter_smi})
                 break
+        log += f"\n\nerror/try : {self.num_error}/{self.num_try}"
+        #print(log)
         return families
-    
-    def test(self,parents):
-        new_child = co.crossover(parents[0].mol, parents[1].mol)
-        new_child_smi = Chem.MolToSmiles(new_child) if Chem.MolToSmiles(new_child) is not None else parents[0].smi
-
-        response = self.drug_assist_request(new_child_smi, self.task_definition)
-        if response == "":return "RESPONSE"
-        proposed_smiles = self.sanitize_smiles(response)
-        if proposed_smiles is None:return "SMILES"
-
-        return proposed_smiles,new_child_smi,self.similarity(proposed_smiles,new_child_smi)
 
 

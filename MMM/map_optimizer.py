@@ -10,7 +10,6 @@ from LLM_operator.biot5 import BioT5
 from LLM_operator.llaSMol import LlaSMol
 from LLM_operator.drug_assist import Drug_Assist
 from LLM_operator.gemini import Gemini
-from LLM_operator.openrouter import Open_Router
 from LLM_operator.ollama import Ollama
 
 from island import Island
@@ -47,9 +46,7 @@ class Map_Optimizer:
                     LLM = Drug_Assist(comps)
             elif comps["LLM"]["type"] == "ollama":
                 LLM = Ollama(comps)
-            elif comps["LLM"]["name"] == "openrouter":
-                LLM = Open_Router(comps)
-            elif comps["LLM"]["name"] == "gemini":
+            elif comps["LLM"]["type"] == "gemini":
                 LLM = Gemini(comps)
 
             self.islands.append(Island(LLM, Evaluator(comps["task"]), self.args.root_output_dir, comps))
@@ -79,7 +76,7 @@ class Map_Optimizer:
     
     def optimize(self):
         print(f"Max processes : {multiprocessing.cpu_count()}")
-        num_processes = 4
+        num_processes = 1
         trials = 1
         while(self.finish() == False):
             with multiprocessing.Pool(processes=num_processes) as pool:

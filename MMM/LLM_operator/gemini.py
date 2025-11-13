@@ -1,11 +1,8 @@
 import google.generativeai as genai
-import json
 import random
-import time
-
+import re
 from rdkit import Chem
-
-from mol_data import Mol_Data
+import time
 
 MINIMUM = 1e-10
 
@@ -13,75 +10,54 @@ genai.configure(api_key="AIzaSyB1yPa0EsQ21nfyVy_1uxm1UACtgkh_1aE")
 
 class Gemini:
     def __init__(self, composit):
-        self.model = genai.GenerativeModel(composit["LLM"])
+        self.model = genai.GenerativeModel(composit["LLM"]["name"])
         self.request_interval = composit["interval"]
 
-        self.task = composit["task"]
-        self.prompt_template = composit["prompt_template"]
         self.offspring_size = composit["offspring_size"]
+        self.prompt_template = composit["prompt_template"]
+        self.model_name = composit["LLM"]["name"]
 
-        self.last_request_time = time.time()
-        
-    def request(self, prompt):
-        response = ""
-        while(True):
-            now = time.time()
-            if now - self.last_request_time > self.request_interval:
-                try:
-                    response = self.model.generate_content(prompt).text
-                except Exception as e:
-                    print(f"{type(e).__name__} {e}")
-                    print(f"gemini request error")
-                    return None
-                self.last_request_time = now
-                return response                
-            else:
-                time.sleep(0.5)
+        self.num_try = 0
+        self.num_error = 0
 
     def sanitize_smiles(self, smi):
         """
         Return a canonical smile representation of smi 
         """
-        if smi is None:
+        if smi is None or smi == "":
             return None
-        smi = smi.replace("\\\\","\\")
         try:
             mol = Chem.MolFromSmiles(smi, sanitize=True)
             smi_canon = Chem.MolToSmiles(mol, isomericSmiles=False, canonical=True)
             return smi_canon
         except:
+            #print(f"Invalid SMILES : {smi}")
             return None
+    
+    def response2smi(self, response):
+        proposed_smis = []
+        if response is None : return None
+        if response.count('"SMILES') != self.offspring_size or response.count('"Explanation"') != self.offspring_size: return None
+        contents = response.split('"SMILES"')[1:]
+        for content in contents:
+            middle = content.split('"Explanation"')[0]
+            print(middle)
+            smi = re.findall(r'"([^"]*)"',middle)[0]
+            clean_smi = self.sanitize_smiles(smi)
+            if clean_smi is None: proposed_smis.append("")
+            else : proposed_smis.append(clean_smi)
+        return proposed_smis
 
-    def response2smis(self, response):
 
-        # レスポンス文字列から開始マーカー "<<<json start>>>" を削除します。
-        response = response.replace("<<<json start>>>", "")
-        # 同様に、終了マーカー "<<<json end>>>" を削除します。
-        response = response.replace("<<<json end>>>", "")
-        # 文字列の先頭および末尾にある不要な空白（スペースや改行など）を除去します。
-        response = response.strip()
-        # JSONとして正しく解析できるように、文字列中のバックスラッシュ `\` を `\\` にエスケープ（置換）します。
-        response_json = response.replace("\\","\\\\")
-
-        data = None
+    def request(self, parent_info):
+        time.sleep(self.request_interval)
         try:
-            data = json.loads(response_json)
+            response = self.model.generate_content(self.prompt_template.replace("<<<ParentInfo>>>",parent_info)).text
+            return "gemini",self.response2smi(response)
         except Exception as e:
-            print("Invalid JSON Error")
-            return None
-
-        smis = []
-        for pair in data.keys():
-            smi = data[pair]["SMILES"]
-            smi = self.sanitize_smiles(smi)
-            if smi is not None: smis.append(smi)
-            else: smis.append("")
-
-        if len(smis) != self.offspring_size:
-            print("Not enough SMILES Error")
-            return None
-
-        return smis
+            #print(f"{type(e).__name__} {e}")
+            #print("Invalid Response")
+            return None,None
 
     def ramdom_parents(self, mating_list):
         parents = []
@@ -99,20 +75,21 @@ class Gemini:
     def mating(self, mating_list: list):
         while(True):
             parent_info, parents = self.ramdom_parents(mating_list)
-            prompt = self.prompt_template.replace("<<<ParentInfo>>>",parent_info)
-
-            response = self.request(prompt)
-            if response is None : continue
-
-            smis = self.response2smis(response)
-            if smis is None : continue
+            response_model, offspring_smis = self.request(parent_info)
+            if offspring_smis is None :
+                continue
 
             families = []
-            for i, smi in enumerate(smis):
-                if smi != "":
-                    print(f"{i} / {len(smis)} {smi}")
-                    families.append(Mol_Data(self.task,Chem.MolFromSmiles(smi),smi,parents[i][0].smi,parents[i][1].smi))
-                else: print(f"{i} / {len(smis)} Invalid Smiles")
-
+            log = ""
+            for i, offspring_smi in enumerate(offspring_smis):
+                self.num_try+=1
+                if offspring_smi != "":
+                    log +=  f"\n{i} / {self.offspring_size} : {response_model} {offspring_smi}"
+                    families.append({"offspring":offspring_smi, "parent1":parents[i][0].smi, "parent2":parents[i][1].smi})
+                else:
+                    self.num_error += 1
+                    log +=  f"\n{i} / {self.offspring_size} : Invalid SMILES"
+            log += f"\n\nerror/try : {self.num_error}/{self.num_try}"
+            print(log)
             return families
 
