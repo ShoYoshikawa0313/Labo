@@ -6,7 +6,7 @@ import time
 
 MINIMUM = 1e-10
 
-genai.configure(api_key="AIzaSyB1yPa0EsQ21nfyVy_1uxm1UACtgkh_1aE")
+genai.configure(api_key="AIzaSyA65cJWE4vjnoXs4m5LRRBw_QW3-mk2Vko")
 
 class Gemini:
     def __init__(self, composit):
@@ -52,11 +52,12 @@ class Gemini:
     def request(self, parent_info):
         time.sleep(self.request_interval)
         try:
+            print("request")
             response = self.model.generate_content(self.prompt_template.replace("<<<ParentInfo>>>",parent_info)).text
             return "gemini",self.response2smi(response)
         except Exception as e:
-            #print(f"{type(e).__name__} {e}")
-            #print("Invalid Response")
+            print(f"{type(e).__name__} {e}")
+            print("Invalid Response")
             return None,None
 
     def ramdom_parents(self, mating_list):
@@ -77,6 +78,7 @@ class Gemini:
             parent_info, parents = self.ramdom_parents(mating_list)
             response_model, offspring_smis = self.request(parent_info)
             if offspring_smis is None :
+                input()
                 continue
 
             families = []

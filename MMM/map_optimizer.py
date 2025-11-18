@@ -1,7 +1,8 @@
 import random
 import yaml
 import numpy as np  # 数値計算に使用
-import multiprocessing
+import os
+from joblib import Parallel, delayed
 
 from rdkit import rdBase  # 分子操作のためのRDKitライブラリ
 rdBase.DisableLog('rdApp.error')  # RDKitのエラーログを無効化
@@ -15,9 +16,9 @@ from LLM_operator.ollama import Ollama
 from island import Island
 from evaluator import Evaluator
 
-def parallel_shift(island, trials):
+def parallel_shift(island, trials, process_id):
     for _ in range(trials):
-        island.generational_shift()
+        island.generational_shift(process_id)
     return island
 
 class Map_Optimizer:
@@ -42,13 +43,15 @@ class Map_Optimizer:
                     LLM = BioT5(comps)
                 elif comps["LLM"]["name"] == "LlaSMol":
                     LLM = LlaSMol(comps)
-                elif comps["LLM"]["name"] == "DrugAssist":
+                elif comps["LLM"]["name"] == "drugassist-instruct":
                     LLM = Drug_Assist(comps)
+                else: return -1
             elif comps["LLM"]["type"] == "ollama":
                 LLM = Ollama(comps)
             elif comps["LLM"]["type"] == "gemini":
                 LLM = Gemini(comps)
-
+            else:
+                return -1
             self.islands.append(Island(LLM, Evaluator(comps["task"]), self.args.root_output_dir, comps))
 
     def select_immigration_source(self,target):
@@ -75,9 +78,10 @@ class Map_Optimizer:
         return cnt == len(self.islands)
     
     def optimize(self):
-        print(f"Max processes : {multiprocessing.cpu_count()}")
+        print(f"Max processes : {os.cpu_count()}")
         num_processes = 1
         trials = 1
         while(self.finish() == False):
-            with multiprocessing.Pool(processes=num_processes) as pool:
-                self.islands = pool.starmap(parallel_shift,[(island,trials) for island in self.islands] )
+            self.islands = Parallel(n_jobs=num_processes)(
+                delayed(parallel_shift)(island, trials, i) for i, island in enumerate(self.islands)
+            )

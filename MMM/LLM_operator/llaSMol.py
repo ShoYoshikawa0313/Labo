@@ -1,6 +1,6 @@
 import random
 import requests
-import tqdm
+from tqdm import tqdm
 from rdkit import Chem
 
 # 自作モジュールのインポート

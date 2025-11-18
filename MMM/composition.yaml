@@ -128,48 +128,190 @@ Model2:
             <<<json end>>>
 
 Model3:
-    - name: gemini
+    - name: GPT
       LLM:
-        name: gemini-2.5-flash
-        type: gemini
+        name: gpt-oss:20b
+        type: ollama
+        URL: "http://10.34.35.193:11434"
       population_size: 100
       offspring_size: 50
-      interval: 10.0
+      interval: 0.0
       task: qed
       prompt_template: |
             I have two molecules and their QED scores. The QED score measures the drug-likeness of the molecule.
-
             <<<ParentInfo>>>
-
-            You are a skilled chemist AI tasked with generating new molecules from given parent pairs. Follow the instructions below to propose one new molecule for each pair.
-            
-            1. Input: Each pair consists of two parent molecules, each with its SMILES and QED score.
-
-            2. Molecular Operation Process:
             Please propose a new molecule that has a higher QED score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.
-
-            3. Output Format: Output all new molecules at once in the strict JSON format below.
+            
+            Output Format: Output one new molecule once in the strict JSON format below.
             Include <<<json start>>> and <<<json end>>> at the beginning and end of the json file.
-            Each entry must include the pair number, the SMILES of the new molecule, and a logical explanation of the operation.
+            Entry must include the SMILES of the new molecule and a logical explanation of the operation.
             
             <<<json start>>>
             {
-                "Pair 1": {
-                    "SMILES": "SMILES of the generated molecule",
-                    "Explanation": "Logical explanation of the operation ... "
-                },
-                "Pair 2": {
-                    "SMILES": "SMILES of the generated molecule",
-                    "Explanation": "Logical explanation of the operation ... "
-                },
-                ...
+                "SMILES": "SMILES of the generated molecule",
+                "Explanation": "Logical explanation of the operation ... "
+            }
+            <<<json end>>>
+            
+    - name: BioT5
+      LLM:
+        name: BioT5
+        type: clm
+      population_size: 100
+      offspring_size: 50
+      interval: 0.0
+      task: qed
+      prompt_template: |
+            Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that looks more like a drug.\n\n
+
+    - name: DrugAssist
+      LLM:
+        name: drugassist-instruct
+        type: clm
+        URL: "http://10.34.35.194:11437"
+      population_size: 100
+      offspring_size: 50
+      interval: 0.0
+      task: qed
+      prompt_template: |
+            [INST] {Increase the QED value of the following molecule while ensuring it remains similar to the original molecule.
+            <<<SMILES>>>} [/INST]
+
+Model4:
+    - name: GPT
+      LLM:
+        name: gpt-oss:20b
+        type: ollama
+        URL: "http://10.34.35.193:11434"
+      population_size: 100
+      offspring_size: 50
+      interval: 0.0
+      task: JNK3
+      prompt_template: |
+            I have two molecules and their JNK3 scores. The JNK3 score measures a moleculars biological activity against JNK3.
+            <<<ParentInfo>>>
+            Please propose a new molecule that has a higher JNK3 score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.
+            
+            Output Format: Output one new molecule once in the strict JSON format below.
+            Include <<<json start>>> and <<<json end>>> at the beginning and end of the json file.
+            Entry must include the SMILES of the new molecule and a logical explanation of the operation.
+            
+            <<<json start>>>
+            {
+                "SMILES": "SMILES of the generated molecule",
+                "Explanation": "Logical explanation of the operation ... "
+            }
+            <<<json end>>>
+    - name: Gemma
+      LLM:
+        name: gemma2:9b
+        type: ollama
+        URL: "http://10.34.35.194:11435"
+      population_size: 100
+      offspring_size: 50
+      interval: 0.0
+      task: JNK3
+      prompt_template: |
+            I have two molecules and their JNK3 scores. The JNK3 score measures a moleculars biological activity against JNK3.
+            <<<ParentInfo>>>
+            Please propose a new molecule that has a higher JNK3 score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.
+            
+            Output Format: Output one new molecule once in the strict JSON format below.
+            Include <<<json start>>> and <<<json end>>> at the beginning and end of the json file.
+            Entry must include the SMILES of the new molecule and a logical explanation of the operation.
+            
+            <<<json start>>>
+            {
+                "SMILES": "SMILES of the generated molecule",
+                "Explanation": "Logical explanation of the operation ... "
+            }
+            <<<json end>>>
+    - name: Qwen3
+      LLM:
+        name: qwen3:8b
+        type: ollama
+        URL: "http://10.34.35.194:11436"
+      population_size: 100
+      offspring_size: 50
+      interval: 0.0
+      task: JNK3
+      prompt_template: |
+            I have two molecules and their JNK3 scores. The JNK3 score measures a moleculars biological activity against JNK3.
+            <<<ParentInfo>>>
+            Please propose a new molecule that has a higher JNK3 score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.
+            
+            Output Format: Output one new molecule once in the strict JSON format below.
+            Include <<<json start>>> and <<<json end>>> at the beginning and end of the json file.
+            Entry must include the SMILES of the new molecule and a logical explanation of the operation.
+            
+            <<<json start>>>
+            {
+                "SMILES": "SMILES of the generated molecule",
+                "Explanation": "Logical explanation of the operation ... "
             }
             <<<json end>>>
 
-            Here are the requirements:
-            1. Explaination should be a logical explanation of the operation.
-            2. The SMILES should be the smiles of your propsosed molecule.
-            3. The molecule should be valid.
+    - name: DrugAssist
+      LLM:
+        name: drugassist-instruct
+        type: clm
+        URL: "http://10.34.35.194:11437"
+      population_size: 100
+      offspring_size: 50
+      interval: 0.0
+      task: JNK3
+      prompt_template: |
+            [INST] {Increase the inhibitor of JNK3 value of the following molecule while ensuring it remains similar to the original molecule.
+            <<<SMILES>>>} [/INST]
+
+Model5:
+    - name: BioT5
+      LLM:
+        name: BioT5
+        type: clm
+      population_size: 100
+      offspring_size: 50
+      interval: 0.0
+      task: JNK3
+      prompt_template: |
+            Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that is a greater inhibitor of JNK3.\n\n
+            
+    - name: DeepSeek
+      LLM:
+        name: deepseek-r1:8b
+        type: ollama
+        URL: "http://10.34.35.193:11434"
+      population_size: 100
+      offspring_size: 50
+      interval: 0.0
+      task: JNK3
+      prompt_template: |
+            I have two molecules and their JNK3 scores. The JNK3 score measures a moleculars biological activity against JNK3.
+            <<<ParentInfo>>>
+            Please propose a new molecule that has a higher JNK3 score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.
+            
+            Output Format: Output one new molecule once in the strict JSON format below.
+            Include <<<json start>>> and <<<json end>>> at the beginning and end of the json file.
+            Entry must include the SMILES of the new molecule and a logical explanation of the operation.
+            
+            <<<json start>>>
+            {
+                "SMILES": "SMILES of the generated molecule",
+                "Explanation": "Logical explanation of the operation ... "
+            }
+            <<<json end>>>
+
+Model6:
+    - name: BioT5
+      LLM:
+        name: BioT5
+        type: clm
+      population_size: 100
+      offspring_size: 50
+      interval: 0.0
+      task: JNK3
+      prompt_template: |
+            Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that is a greater inhibitor of JNK3.\n\n
 
 test2:
     - LLM: BioT5
@@ -219,9 +361,10 @@ test3:
             3. The molecule should be valid.
 
 test4:
-    - LLM: LlaSMol
-      LLM_type: clm
-      name: LlaSMol
+    - name: LlaSMol
+      LLM:
+        name: LlaSMol
+        type: clm
       population_size: 100
       offspring_size: 50
       interval: 0.0
@@ -230,9 +373,11 @@ test4:
             Could you modify <SMILES> <<<SMILES>>> </SMILES> to increase QED score ?
 
 test5:
-    - LLM: DrugAssist
-      LLM_type: clm
-      name: DrugAssist
+    - name: DrugAssist
+      LLM:
+        name: drugassist-instruct
+        type: clm
+        URL: "http://10.34.35.194:11437"
       population_size: 100
       offspring_size: 50
       interval: 0.0
@@ -354,3 +499,47 @@ test10:
                 "Explanation": "Logical explanation of the operation ... "
             }
             <<<json end>>>
+
+test11:
+    - name: gemini
+      LLM:
+        name: gemini-2.5-flash
+        type: gemini
+      population_size: 100
+      offspring_size: 50
+      interval: 10.0
+      task: JNK3
+      prompt_template: |
+            I have two molecules and their JNK3 scores. The JNK3 score measures a moleculars biological activity against JNK3.
+            
+            <<<ParentInfo>>>
+
+            You are a skilled chemist AI tasked with generating new molecules from given parent pairs. Follow the instructions below to propose one new molecule for each pair.
+            
+            1. Input: Each pair consists of two parent molecules, each with its SMILES and JNK3 score.
+
+            2. Molecular Operation Process:
+            Please propose a new molecule that has a higher JNK3 score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.
+
+            3. Output Format: Output all new molecules at once in the strict JSON format below.
+            Include <<<json start>>> and <<<json end>>> at the beginning and end of the json file.
+            Each entry must include the pair number, the SMILES of the new molecule, and a logical explanation of the operation.
+            
+            <<<json start>>>
+            {
+                "Pair 1": {
+                    "SMILES": "SMILES of the generated molecule",
+                    "Explanation": "Logical explanation of the operation ... "
+                },
+                "Pair 2": {
+                    "SMILES": "SMILES of the generated molecule",
+                    "Explanation": "Logical explanation of the operation ... "
+                },
+                ...
+            }
+            <<<json end>>>
+
+            Here are the requirements:
+            1. Explaination should be a logical explanation of the operation.
+            2. The SMILES should be the smiles of your propsosed molecule.
+            3. The molecule should be valid.

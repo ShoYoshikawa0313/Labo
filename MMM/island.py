@@ -187,7 +187,7 @@ class Island():
             result_dict = { mlc.smi : mlc.to_dict() for mlc in self.offspring}
             yaml.dump(result_dict, f, sort_keys=False) # 作成した辞書をYAML形式でファイルに書き込みます。
 
-    def generational_shift(self):
+    def generational_shift(self, process_id=0):
 
         self.log_intermediate()
         self.save_population(f"{self.n_generation}G")
@@ -198,7 +198,7 @@ class Island():
         indices = self.weighted_random_select(self.offspring_size)
         mating_list = [next_population[index] for index in indices]
 
-        families = self.LLM.mating(mating_list)
+        families = self.LLM.mating(mating_list, process_id)
         self.offspring = self.families2mlcs(families)
 
         # 現世代の集団に新しく生成した子孫集団を追加

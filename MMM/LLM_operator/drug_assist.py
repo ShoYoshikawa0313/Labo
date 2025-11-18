@@ -51,7 +51,6 @@ class Drug_Assist:
             "num_predict": self.max_length
         }
         }
-
         try:
             # POSTリクエストを送信
             response = requests.post(f"{self.base_url}{self.endpoint}", json=params)
@@ -62,8 +61,8 @@ class Drug_Assist:
             return response_dict["model"], self.response2smi(response_dict["response"])
 
         except Exception as e:
-            #print(f"{type(e).__name__} {e}")
-            #print("Invalid Response")
+            #print(f"{type(e).__name__} {e}",flush=True)
+            #print("Invalid Response",flush=True)
             return None,None
     
     def reproduce(self, mating_list: list):
