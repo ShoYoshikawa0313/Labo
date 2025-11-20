@@ -19,6 +19,7 @@ from LLM_operator.ollama import Ollama
 
 from island import Island
 from evaluator import Evaluator
+from evaluator import population_similarity
 
 def parallel_shift(island, trials, process_id):
     for i in range(trials):
@@ -67,35 +68,75 @@ class Random_Optimizer:
                 return -1
             self.islands.append(Island(LLM, Evaluator(comps["task"]), self.args.root_output_dir, comps))
 
-    def immigration_process(self):
+    def diversity_immigration(self):
         # 各島から移住させる個体（移民）を格納するリスト
-        immigrats_islands = []
+        immigrats_islands = [[] for _ in self.islands]
+        
         if len(self.islands) <= 1:
             return
         # 各島（宛先）に対して、別の島（供給源）から移民を受け入れるプロセス
-        for i in range(len(self.islands)):
-            source = None
-            # 宛先の島と供給源の島が同じにならないように、ランダムに供給源の島を選択する
-            while(True):
-                candidate = random.randint(0,len(self.islands)-1)
-                if i != candidate:
-                    source = candidate
-                    break
+        for target in range(len(self.islands)):
             
-            # 供給源の島から、評価値に基づいて重み付けランダムサンプリングで移民を選択する
-            indices = self.islands[source].weighted_random_select(self.immigrants_size)
-            # 選択された移民の個体をリストに追加する
-            immigrats_islands.append([self.islands[source].population[index] for index in indices])
-        
+            min_similarity = float('inf')
+            source = None
+            # 最も類似度の低い島を移住元として選択
+            for candidate in range(len(self.islands)):
+                if target == candidate:
+                    continue
+                
+                similarity = population_similarity(self.islands[target].population, self.islands[candidate].population)
+                if similarity < min_similarity:
+                    min_similarity = similarity
+                    source = candidate
+            
+            target_smis = [mlc.smi for mlc in self.islands[target].population]
+            while(len(immigrats_islands[target]) < self.immigrants_size):
+                index = self.islands[source].weighted_random_select(1)[0]
+                immigrant_mlc = self.islands[source].population[index]
+                if immigrant_mlc.smi not in target_smis:
+                    immigrats_islands[target].append(immigrant_mlc)
+
         # 各島で、評価の低い個体を移民と入れ替えるプロセス
         for i in range(len(self.islands)):
             # 宛先の島から、評価値が低い個体を逆重み付けランダムサンプリングで選択する
             # これにより、評価の低い個体が置換の対象となる
             indices = self.islands[i].weighted_random_select(self.immigrants_size, reverse=True)
             # 選択された評価の低い個体を、対応する移民の個体と入れ替える
-            for j , index in enumerate(indices):
+            for j, index in enumerate(indices):
                 self.islands[i].population[index] = immigrats_islands[i][j]
         
+
+    def random_immigration(self):
+        # 各島から移住させる個体（移民）を格納するリスト
+        immigrats_islands = [[] for _ in self.islands]
+        
+        if len(self.islands) <= 1:
+            return
+        # 各島（宛先）に対して、別の島（供給源）から移民を受け入れるプロセス
+        for target in range(len(self.islands)):
+            source = None
+            # 宛先の島と供給源の島が同じにならないように、ランダムに供給源の島を選択する
+            while(True):
+                candidate = random.randint(0,len(self.islands)-1)
+                if target != candidate:
+                    source = candidate
+                    break
+            
+            target_smis = [mlc.smi for mlc in self.islands[target].population]
+            while(len(immigrats_islands[target]) < self.immigrants_size):
+                index = self.islands[source].weighted_random_select(1)[0]
+                immigrant_mlc = self.islands[source].population[index]
+                if immigrant_mlc.smi not in target_smis:
+                    immigrats_islands[target].append(immigrant_mlc)
+
+        # 各島で、評価の低い個体を移民と入れ替えるプロセス
+        for i in range(len(self.islands)):
+            # 宛先の島から、評価値が低い個体を逆重み付けランダムサンプリングで選択する
+            # これにより、評価の低い個体が置換の対象となる
+            indices = self.islands[i].weighted_random_select(self.immigrants_size, reverse=True)
+            # 選択された評価の低い個体を、対応する移民の個体と入れ替える
+            for j, index in enumerate(indices):
+                self.islands[i].population[index] = immigrats_islands[i][j]
 
     def finish(self):
         cnt = 0
@@ -114,4 +155,4 @@ class Random_Optimizer:
             for island in self.islands:
                 island.log_intermediate()
 
-            self.immigration_process()
+            self.diversity_immigration()

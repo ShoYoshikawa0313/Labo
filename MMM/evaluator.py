@@ -50,7 +50,7 @@ class Evaluator:
             return fitness
                 
 
-def calculate_population_similarity(population1, population2):
+def population_similarity(population1, population2):
     """
     2つのpopulation間の類似度を「最大類似度の平均」を用いて計算します。
     具体的には、一方の集団の各個体について、もう一方の集団における最も類似度の高い個体との類似度（最大類似度）を求め、
