@@ -25,6 +25,8 @@ class Ollama:
         """
         if smi is None or smi == "":
             return None
+        if "." in smi:
+            return None
         try:
             mol = Chem.MolFromSmiles(smi, sanitize=True)
             smi_canon = Chem.MolToSmiles(mol, isomericSmiles=False, canonical=True)
@@ -84,10 +86,10 @@ class Ollama:
         parent_info += f"[ ParentB : {parentB.smi} , {parentB.score:.3f} ]\n"
         return parent_info, parentA.smi, parentB.smi
 
-    def mating(self, mating_list: list):
+    def mating(self, mating_list, process_id=0):
         families = []
         log = ""
-        for i in tqdm(range(self.offspring_size), desc=f"{self.model_name}  "):
+        for i in tqdm(range(self.offspring_size), position=process_id, desc=f"{self.model_name:<15}"):
             while(True):
                 self.num_try += 1
                 parents_info, parent1_smi, parent2_smi = self.ramdom_parents(mating_list)

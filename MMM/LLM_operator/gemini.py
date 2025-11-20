@@ -26,6 +26,8 @@ class Gemini:
         """
         if smi is None or smi == "":
             return None
+        if "." in smi:
+            return None
         try:
             mol = Chem.MolFromSmiles(smi, sanitize=True)
             smi_canon = Chem.MolToSmiles(mol, isomericSmiles=False, canonical=True)

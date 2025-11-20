@@ -189,7 +189,6 @@ class Island():
 
     def generational_shift(self, process_id=0):
 
-        self.log_intermediate()
         self.save_population(f"{self.n_generation}G")
 
         next_population = self.population[:]
