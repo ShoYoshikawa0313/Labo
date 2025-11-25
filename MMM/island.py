@@ -52,6 +52,11 @@ class Island():
         return initial_population
 
     def weighted_random_select(self, size, reverse=False):
+        """
+        reverse=Trueの場合、スコアが低い個体を優先的に選択します。
+        reverse=Falseの場合、スコアが高い個体を優先的に選択します。
+        defaultはreverse=Falseです。
+        """
         # スコアを抽出
         population_scores = None
         if reverse == False:

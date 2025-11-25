@@ -1,6 +1,7 @@
 import math
 import tdc
 
+from rdkit.DataStructs import TanimotoSimilarity
 from rdkit import Chem, DataStructs
 from rdkit.Chem import AllChem
 
@@ -49,6 +50,21 @@ class Evaluator:
             # 分子バッファから該当するSMILES文字列のフィットネスを返します。
             return fitness
                 
+def sim_with_parents(mlc):
+    sims = {}
+
+    self_fp = AllChem.GetMorganFingerprintAsBitVect(mlc.mol, 2, nBits=1024)
+
+    if mlc.parent1_smi != "":
+        fp_parent1 = AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(mlc.parent1_smi), 2, nBits=1024)
+        sims["parent1"] = TanimotoSimilarity(fp_parent1,self_fp)
+    if mlc.parent2_smi != "":
+        fp_parent2 = AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(mlc.parent2_smi), 2, nBits=1024)
+        sims["parent2"] = TanimotoSimilarity(fp_parent2,self_fp)
+    if mlc.inter_smi != "":
+        fp_inter = AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(mlc.inter_smi), 2, nBits=1024)
+        sims["inter"] = TanimotoSimilarity(fp_inter,self_fp)
+    return sims
 
 def population_similarity(population1, population2):
     """

@@ -11,6 +11,9 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     git \
     libxrender1 \
+    texlive-xetex \
+    texlive-fonts-recommended \
+    texlive-plain-generic \
     && rm -rf /var/lib/apt/lists/*
 
 # requirements.txtをコンテナにコピー
