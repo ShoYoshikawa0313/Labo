@@ -6,25 +6,17 @@ from rdkit import Chem, DataStructs
 from rdkit.Chem import AllChem
 
 class Evaluator:
+    _oracles = {}
+    _diversities = {}
+
     def __init__(self, task):
         self.task = task
-        self.oracle = tdc.Oracle(name = self.task)
-        self.diversity = tdc.Evaluator(name = 'Diversity')
-
-    def __getstate__(self):
-        # オブジェクトの状態をコピー
-        state = self.__dict__.copy()
-        # pickle化できない属性を削除
-        del state['oracle']
-        del state['diversity']
-        return state
-
-    def __setstate__(self, state):
-        # オブジェクトの状態を復元
-        self.__dict__.update(state)
-        # pickle化できない属性を再初期化
-        self.oracle = tdc.Oracle(name = self.task)
-        self.diversity = tdc.Evaluator(name = 'Diversity')
+        if self.task not in Evaluator._oracles:
+            Evaluator._oracles[self.task] = tdc.Oracle(name=self.task)
+        if 'Diversity' not in Evaluator._diversities:
+            Evaluator._diversities['Diversity'] = tdc.Evaluator(name='Diversity')
+        self.oracle = Evaluator._oracles[self.task]
+        self.diversity = Evaluator._diversities['Diversity']
 
     def score(self,smi):
         # SMILES文字列がNoneの場合、スコア0を返します。

@@ -150,7 +150,7 @@ class Island():
                 f'top10%: {avg_top10:.3f} | ' 
                 f'top50%: {avg_top50:.3f} | ' 
                 f'Overall: {avg_overall:.3f} | ' 
-                f'div: {diversity_overall:.3f}  ' + 50*"-")
+                f'div: {diversity_overall:.3f}  ')
         
     def save_population(self, suffix=None): # 結果を保存するメソッドです。
         """

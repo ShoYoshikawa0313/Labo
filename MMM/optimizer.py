@@ -3,10 +3,6 @@ import yaml
 import numpy as np  # 数値計算に使用
 import os
 from joblib import Parallel, delayed
-import logging
-
-# tdcライブラリからのINFOレベルのログ(Found local copy...など)を抑制
-logging.getLogger('tdc').setLevel(logging.WARNING)
 
 from rdkit import rdBase  # 分子操作のためのRDKitライブラリ
 from rdkit import DataStructs
@@ -297,7 +293,7 @@ class Random_Optimizer:
 
         return clustered_population
 
-    def cluster_filling_immigration(self, max_cluster_size=5): 
+    def cluster_filling_immigration(self, max_cluster_size=5, cut_off_threshold=0.3): 
         if len(self.islands) <= 1:
             return
         
@@ -309,7 +305,7 @@ class Random_Optimizer:
                     all_mlcs.append(mlc)
                     all_smis.add(mlc.smi)
         
-        all_clusters = self.cluster_population(all_mlcs, cutoff=0.2)
+        all_clusters = self.cluster_population(all_mlcs, cutoff=cut_off_threshold)
         # 各クラスターの平均スコアで降順にソート
         all_clusters.sort(key=lambda c: sum(mlc.score for mlc in c) / len(c) if c else 0, reverse=True)
 
@@ -319,7 +315,7 @@ class Random_Optimizer:
             
             # 1. 過密クラスタから個体を削除する
             # 島内の個体群をクラスタリング
-            clusters = self.cluster_population(self.islands[target_index].population, cutoff=0.2)
+            clusters = self.cluster_population(self.islands[target_index].population, cutoff=cut_off_threshold)
             
             removed_count = 0
             for cluster in clusters:
@@ -355,7 +351,8 @@ class Random_Optimizer:
                             if mlc.smi not in target_smis and len(immigrants) < removed_count:
                                 immigrants.append(mlc)
                                 target_smis.add(mlc.smi) # 追加した個体を重複チェック用セットにも追加
-            
+
+                print(f"Island {target_index}: Removed {removed_count} individuals, Immigrated {len(immigrants)} individuals.")
                 target_island.population.extend(immigrants)
 
     
@@ -433,7 +430,12 @@ class Random_Optimizer:
                 delayed(parallel_shift)(island, self.args.immigration_freq, i) for i, island in enumerate(self.islands)
             )
 
+            print("Before Immigration:")
             for island in self.islands:
                 island.log_intermediate()
 
-            self.cluster_filling_immigration()
+            self.cluster_filling_immigration(max_cluster_size=3)
+
+            print("After Immigration:")
+            for island in self.islands:
+                island.log_intermediate()
