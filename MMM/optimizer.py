@@ -9,6 +9,9 @@ import logging
 logging.getLogger('tdc').setLevel(logging.WARNING)
 
 from rdkit import rdBase  # 分子操作のためのRDKitライブラリ
+from rdkit import DataStructs
+from rdkit.Chem import AllChem
+from rdkit.ML.Cluster import Butina
 rdBase.DisableLog('rdApp.error')  # RDKitのエラーログを無効化
 
 from LLM_operator.biot5 import BioT5
@@ -158,7 +161,6 @@ class Random_Optimizer:
             for i in range(len(best_candidate)):
                 self.islands[target_index].population[(-1*i)-1] = best_candidate[i]
             
-
     def score_immigration(self):
         # 各島から移住させる個体（移民）を格納するリスト
         immigrats_islands = [[] for _ in self.islands]
@@ -265,6 +267,97 @@ class Random_Optimizer:
             # 選択された評価の低い個体を、対応する移民の個体と入れ替える
             for j, index in enumerate(indices):
                 self.islands[i].population[index] = immigrats_islands[i][j]
+
+    def cluster_population(self, population, cutoff=0.2):
+        """
+        Perform Butina clustering on a population based on molecular fingerprints.
+
+        Args:
+            population (list): A list of Mol_Data objects.
+            cutoff (float): Tanimoto similarity cutoff for clustering.
+
+        Returns:
+            list: A list of clusters, where each cluster is a list of Mol_Data objects.
+        """
+        # Generate fingerprints for all molecules in the population
+        fps = [AllChem.GetMorganFingerprintAsBitVect(mlc.mol, radius=2) for mlc in population]
+
+        # Calculate pairwise Tanimoto similarities
+        n = len(fps)
+        dists = []
+        for i in range(1, n):
+            sims = DataStructs.BulkTanimotoSimilarity(fps[i], fps[:i])
+            dists.extend([1 - sim for sim in sims])  # Convert similarity to distance
+
+        # Perform Butina clustering
+        clusters = Butina.ClusterData(dists, nPts=n, distThresh=cutoff, isDistData=True)
+
+        # Map cluster indices to Mol_Data objects
+        clustered_population = [[population[idx] for idx in cluster] for cluster in clusters]
+
+        return clustered_population
+
+    def cluster_filling_immigration(self, max_cluster_size=5): 
+        if len(self.islands) <= 1:
+            return
+        
+        all_smis = set()
+        all_mlcs = []
+        for island in self.islands:
+            for mlc in island.population:
+                if mlc.smi not in all_smis:
+                    all_mlcs.append(mlc)
+                    all_smis.add(mlc.smi)
+        
+        all_clusters = self.cluster_population(all_mlcs, cutoff=0.2)
+        # 各クラスターの平均スコアで降順にソート
+        all_clusters.sort(key=lambda c: sum(mlc.score for mlc in c) / len(c) if c else 0, reverse=True)
+
+        # 各島をループして、クラスタの過密抑制とニッチ充填を行う
+        for target_index in range(len(self.islands)):
+            target_island = self.islands[target_index]
+            
+            # 1. 過密クラスタから個体を削除する
+            # 島内の個体群をクラスタリング
+            clusters = self.cluster_population(self.islands[target_index].population, cutoff=0.2)
+            
+            removed_count = 0
+            for cluster in clusters:
+                # クラスタサイズが上限を超えている場合
+                if len(cluster) > max_cluster_size:
+                    # スコアでソートし、スコアの低い個体（超過分）を削除対象とする
+                    sorted_cluster = sorted(cluster, reverse=True)
+                    remove_mlcs = sorted_cluster[max_cluster_size:]
+                    for mlc in remove_mlcs:
+                        # population.remove()は低速なため、try-exceptで安全に実行
+                        try:
+                            target_island.population.remove(mlc)
+                            removed_count += 1
+                        except ValueError:
+                            # 複数のクラスタに同じ個体が含まれる場合など、すでに削除されている可能性がある
+                            pass
+
+            # 2. 削除して空いたスペースに、島に存在しない有望なクラスタから個体を補充する
+            if removed_count > 0:
+                # 島に存在するSMILESをセットに格納し、重複チェックを高速化
+                target_smis = {mlc.smi for mlc in target_island.population}
+                immigrants = []
+                # 全体の有望クラスタ（スコア順にソート済み）をループ
+                for candidate_cluster in all_clusters:
+                    # 移住候補が補充すべき数に達したらループを抜ける
+                    if len(immigrants) >= removed_count:
+                        break
+                    
+                    # クラスタ内のいずれかの分子が島に既に存在するかチェック
+                    if not any(mlc.smi in target_smis for mlc in candidate_cluster):
+                        # 存在しない場合、そのクラスタからスコアの高い順に個体を追加
+                        for mlc in sorted(candidate_cluster, reverse=True):
+                            if mlc.smi not in target_smis and len(immigrants) < removed_count:
+                                immigrants.append(mlc)
+                                target_smis.add(mlc.smi) # 追加した個体を重複チェック用セットにも追加
+            
+                target_island.population.extend(immigrants)
+
     
     def niche_filling_immigration(self):
         """
@@ -314,8 +407,11 @@ class Random_Optimizer:
             if not immigrant_candidates:
                 continue
 
-            # 4. 移住候補をスコアでソートし、上位を移民として選定
-            immigrant_candidates.sort(reverse=True) # Mol_Dataはスコアで比較される
+            # 4. 移住候補をスコアでソートするのではなく、ランダムにシャッフルする
+            #    これにより、スコアが高い個体に偏らず、純粋に化学構造の新規性に基づいて
+            #    移住者が選ばれるようになり、多様性の向上が期待できる。
+            random.shuffle(immigrant_candidates)
+            # immigrant_candidates.sort(reverse=True) # Mol_Dataはスコアで比較される
             immigrants = immigrant_candidates[:self.immigrants_size]
 
             # 5. 移住先の評価が最も低い個体と入れ替え
@@ -340,4 +436,4 @@ class Random_Optimizer:
             for island in self.islands:
                 island.log_intermediate()
 
-            self.forced_random_immigration()
+            self.cluster_filling_immigration()
