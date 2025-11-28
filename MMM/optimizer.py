@@ -105,58 +105,6 @@ class Random_Optimizer:
             for j, index in enumerate(indices):
                 self.islands[i].population[index] = immigrats_islands[i][j]
 
-    def forced_diversity_immigration(self):
-        """
-        多様性を強制的に向上させるための移住戦略。
-        各島に対して、他の全ての島からの移住候補を評価し、
-        移住後の多様性が最も高くなるような移住者の組み合わせを選択して、
-        評価の低い個体と入れ替える。
-        """
-        if len(self.islands) <= 1:
-            return
-        # 各島を移住先（target）としてループ
-        for target_index in range(len(self.islands)):
-            # 移住先の島に存在する分子のSMILESリスト（重複チェック用）
-            target_smis = [mlc.smi for mlc in self.islands[target_index].population]
-            # 他の島から集めた移住候補のリスト
-            candidates = []
-            # 各島を移住元（source）としてループ
-            for source_index in range(len(self.islands)):
-                # 移住元と移住先が同じ場合はスキップ
-                if target_index == source_index:
-                    continue
-                # 移住元の島から、移住先の島に存在しない分子をフィルタリング
-                filted = []
-                for mlc in self.islands[source_index].population:
-                    if mlc.smi not in target_smis:
-                        filted.append(mlc)
-
-                # フィルタリング後の候補数が移住させる数に満たない場合はスキップ
-                if self.immigrants_size > len(filted): continue
-                # 候補を評価値でソートし、上位の個体を移住候補として選択
-                filted = sorted(filted, reverse=True)[:self.immigrants_size]
-                candidates.append(filted)
-            
-            max_diversity = -1.0
-            best_candidate = None
-            # 最も多様性を向上させる移住候補の組み合わせを探す
-            for candidate in candidates:
-                # 移住後の個体群を一時的に作成して多様性を評価
-                tmp = self.islands[target_index].population[:]
-                for i in range(len(candidate)):
-                    tmp[(-1*i)-1] = candidate[i]
-                diversity = self.islands[target_index].evaluator.diversity([mlc.smi for mlc in tmp])
-                # これまでの最大多様性を超えていれば、その候補を最適候補として更新
-                if diversity > max_diversity:
-                    max_diversity = diversity
-                    best_candidate = candidate[:]
-            # 最適な移住候補が見つからなかった場合はスキップ
-            if best_candidate is None:
-                continue
-            # 移住先の島で評価が最も低い個体から順に、最適な移住候補と入れ替える
-            for i in range(len(best_candidate)):
-                self.islands[target_index].population[(-1*i)-1] = best_candidate[i]
-            
     def score_immigration(self):
         # 各島から移住させる個体（移民）を格納するリスト
         immigrats_islands = [[] for _ in self.islands]
@@ -193,44 +141,6 @@ class Random_Optimizer:
             # 選択された評価の低い個体を、対応する移民の個体と入れ替える
             for j, index in enumerate(indices):
                 self.islands[i].population[index] = immigrats_islands[i][j]
-
-    def forced_random_immigration(self):
-        source_populations = [sorted(island.population[:],reverse=True) for island in self.islands]
-        
-        if len(self.islands) <= 1:
-            return
-        # 各島（宛先）に対して、別の島（供給源）から移民を受け入れるプロセス
-        for target in range(len(self.islands)):
-            source = None
-            # 宛先の島と供給源の島が同じにならないように、ランダムに供給源の島を選択する
-            while(True):
-                candidate = random.randint(0,len(self.islands)-1)
-                if target != candidate:
-                    source = candidate
-                    break
-            
-            num_imm = 0
-            # 移住先のSMILESをセットに変換して重複チェックを高速化
-            target_smis = {mlc.smi for mlc in self.islands[target].population}
-            # 移住元の個体群をコピーして、処理中に変更できるようにする
-            source_candidates = source_populations[source][:]
-
-            while(num_imm < self.immigrants_size):
-                found_immigrant = False
-                for i, mlc in enumerate(source_candidates):
-                    if mlc.smi not in target_smis: # 高速なセットでのチェック
-                        # 評価の低い個体を上書き
-                        self.islands[target].population[-1 - num_imm] = mlc
-                        # 移住させた分子を移住先のSMILESセットに追加
-                        target_smis.add(mlc.smi)
-                        num_imm += 1
-                        found_immigrant = True
-                        # 処理済みの候補をリストから削除
-                        del source_candidates[i]
-                        break # 次の移民を探す
-                # 新しい移民が見つからなかった場合はループを抜ける
-                if not found_immigrant:
-                    break
 
     def random_immigration(self):
         # 各島から移住させる個体（移民）を格納するリスト
@@ -293,7 +203,76 @@ class Random_Optimizer:
 
         return clustered_population
 
-    def cluster_filling_immigration(self, max_cluster_size=5, cut_off_threshold=0.3): 
+    def max_similarity(self, mlc, population):
+        max_sim = 0.0
+        fp1 = AllChem.GetMorganFingerprintAsBitVect(mlc.mol, radius=2)
+        for other_mlc in population:
+            fp2 = AllChem.GetMorganFingerprintAsBitVect(other_mlc.mol, radius=2)
+            sim = DataStructs.TanimotoSimilarity(fp1, fp2)
+            if sim > max_sim:
+                max_sim = sim
+        return max_sim
+
+    def cluster_niche_filling_immigration(self, max_cluster_size=5, cut_off_threshold=0.3): 
+        if len(self.islands) <= 1:
+            return
+        
+        all_smis = set()
+        all_mlcs = []
+        for island in self.islands:
+            for mlc in island.population:
+                if mlc.smi not in all_smis:
+                    all_mlcs.append(mlc)
+                    all_smis.add(mlc.smi)
+        
+        # 各島をループして、クラスタの過密抑制とニッチ充填を行う
+        for target_index in range(len(self.islands)):
+            target_island = self.islands[target_index]
+            
+            # 1. 過密クラスタから個体を削除する
+            # 島内の個体群をクラスタリング
+            clusters = self.cluster_population(self.islands[target_index].population, cutoff=cut_off_threshold)
+            
+            removed_count = 0
+            for cluster in clusters:
+                # クラスタサイズが上限を超えている場合
+                if len(cluster) > max_cluster_size:
+                    # スコアでソートし、スコアの低い個体（超過分）を削除対象とする
+                    sorted_cluster = sorted(cluster, reverse=True)
+                    remove_mlcs = sorted_cluster[max_cluster_size:]
+                    for mlc in remove_mlcs:
+                        # population.remove()は低速なため、try-exceptで安全に実行
+                        try:
+                            target_island.population.remove(mlc)
+                            removed_count += 1
+                        except ValueError:
+                            # 複数のクラスタに同じ個体が含まれる場合など、すでに削除されている可能性がある
+                            pass
+
+            # 2. 削除して空いたスペースに、島に存在しない有望なクラスタから個体を補充する
+            if removed_count > 0:
+                target_smis = {mlc.smi for mlc in target_island.population}
+                immigrants = []
+
+                other_population = []
+                for idx in range(len(self.islands)):
+                    if idx == target_index:
+                        continue
+                    other_population.extend(self.islands[idx].population)
+
+                # 他の島の個体群から、現在の島に対する新規性が高い（最大類似度が低い）個体を選ぶ
+                # (個体, 現在の島との最大類似度) のタプルのリストを作成
+                immigrant_candidates = [(mlc, self.max_similarity(mlc, target_island.population)) for mlc in other_population if mlc.smi not in target_smis]
+                # 最大類似度が低い順（新規性が高い順）にソート
+                immigrant_candidates.sort(key=lambda x: x[1])
+                # 移住させる個体を決定
+                immigrants = [mlc for mlc, _ in immigrant_candidates]
+                immigrants = immigrants[:removed_count]
+
+                print(f"Island {target_index}: Removed {removed_count} individuals, Immigrated {len(immigrants)} individuals.")
+                target_island.population.extend(immigrants)
+
+    def cluster_filling_diversity_immigration(self, max_cluster_size=5, cut_off_threshold=0.3): 
         if len(self.islands) <= 1:
             return
         
@@ -338,83 +317,26 @@ class Random_Optimizer:
                 # 島に存在するSMILESをセットに格納し、重複チェックを高速化
                 target_smis = {mlc.smi for mlc in target_island.population}
                 immigrants = []
-                # 全体の有望クラスタ（スコア順にソート済み）をループ
-                for candidate_cluster in all_clusters:
-                    # 移住候補が補充すべき数に達したらループを抜ける
-                    if len(immigrants) >= removed_count:
-                        break
-                    
-                    # クラスタ内のいずれかの分子が島に既に存在するかチェック
-                    if not any(mlc.smi in target_smis for mlc in candidate_cluster):
-                        # 存在しない場合、そのクラスタからスコアの高い順に個体を追加
-                        for mlc in sorted(candidate_cluster, reverse=True):
-                            if mlc.smi not in target_smis and len(immigrants) < removed_count:
-                                immigrants.append(mlc)
-                                target_smis.add(mlc.smi) # 追加した個体を重複チェック用セットにも追加
+                
+                source_index = None
+                min_similarity = float('inf')
 
+                for candidate_index in range(len(self.islands)):
+                    if target_index == candidate_index:
+                        continue
+                    similarity = population_similarity(self.islands[target_index].population, self.islands[candidate_index].population)
+                    if similarity < min_similarity:
+                        min_similarity = similarity
+                        source_index = candidate_index
+
+                while(len(immigrants) < removed_count):
+                    index = self.islands[source_index].weighted_random_select(1)[0]
+                    immigrant_mlc = self.islands[source_index].population[index]
+                    if immigrant_mlc.smi not in target_smis:
+                        immigrants.append(immigrant_mlc)
+                    
                 print(f"Island {target_index}: Removed {removed_count} individuals, Immigrated {len(immigrants)} individuals.")
                 target_island.population.extend(immigrants)
-
-    
-    def niche_filling_immigration(self):
-        """
-        化学的ニッチを充填することによる多様性向上戦略。
-        各島に存在しない、あるいは希少な化学構造（Murcko骨格）を持つ個体を
-        他の島から探し出し、評価の高い個体を移住させる。
-        """
-        if len(self.islands) <= 1:
-            return
-
-        # 1. 全ての島の個体からMurcko骨格を抽出し、グローバルな骨格カタログを作成
-        global_scaffold_catalog = {}
-        for island in self.islands:
-            for mlc in island.population:
-                try:
-                    scaffold = MurckoScaffold.MurckoScaffoldSmiles(mol=mlc.mol, includeChirality=False)
-                    if scaffold:
-                        if scaffold not in global_scaffold_catalog:
-                            global_scaffold_catalog[scaffold] = []
-                        global_scaffold_catalog[scaffold].append(mlc)
-                except:
-                    continue # 骨格が生成できない分子はスキップ
-
-        # 各島を移住先としてループ
-        for target_index, target_island in enumerate(self.islands):
-            # 2. 移住先の島に存在する骨格のセットを作成
-            target_scaffolds = set()
-            for mlc in target_island.population:
-                try:
-                    scaffold = MurckoScaffold.MurckoScaffoldSmiles(mol=mlc.mol, includeChirality=False)
-                    if scaffold:
-                        target_scaffolds.add(scaffold)
-                except:
-                    continue
-
-            # 3. 移住先の島に存在しない「ニッチ」な骨格を持つ移住候補を探す
-            immigrant_candidates = []
-            for scaffold, mlcs in global_scaffold_catalog.items():
-                if scaffold not in target_scaffolds:
-                    # 他の島に由来する個体のみを候補とする
-                    for mlc in mlcs:
-                        # この個体がどの島に由来するかを特定するのは困難なため、
-                        # ここでは単純にグローバルカタログから候補を選出する。
-                        # (厳密には、その個体がtarget_island由来でないことを確認すべき)
-                        immigrant_candidates.append(mlc)
-
-            if not immigrant_candidates:
-                continue
-
-            # 4. 移住候補をスコアでソートするのではなく、ランダムにシャッフルする
-            #    これにより、スコアが高い個体に偏らず、純粋に化学構造の新規性に基づいて
-            #    移住者が選ばれるようになり、多様性の向上が期待できる。
-            random.shuffle(immigrant_candidates)
-            # immigrant_candidates.sort(reverse=True) # Mol_Dataはスコアで比較される
-            immigrants = immigrant_candidates[:self.immigrants_size]
-
-            # 5. 移住先の評価が最も低い個体と入れ替え
-            if immigrants:
-                for i in range(len(immigrants)):
-                    self.islands[target_index].population[(-1*i)-1] = immigrants[i]
 
     def finish(self):
         cnt = 0
@@ -434,7 +356,7 @@ class Random_Optimizer:
             for island in self.islands:
                 island.log_intermediate()
 
-            self.cluster_filling_immigration(max_cluster_size=3)
+            self.cluster_filling_immigration(max_cluster_size=3, cut_off_threshold=0.4)
 
             print("After Immigration:")
             for island in self.islands:
