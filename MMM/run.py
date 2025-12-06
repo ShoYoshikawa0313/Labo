@@ -2,31 +2,36 @@ import os
 import argparse
 from time import time 
 import datetime
-from optimizer import Random_Optimizer
+from optimizer import Optimizer
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-model", type=str, default="Model1")
     parser.add_argument("-composition_file", type=str, default="composition.yaml")
     parser.add_argument('-root_output_dir', type=str, default="results")
+    parser.add_argument('-dir_name',type=str, default="")
     parser.add_argument('-seed', type=int, default=0)
-    parser.add_argument('-processes', type=int, default=1)
-    parser.add_argument('-immigration', type=bool, default=True)
-    parser.add_argument('-immigration_freq', type=int, default=5)
+    parser.add_argument('-resume',type=str, default="")
 
     args = parser.parse_args()
 
     if not os.path.exists(args.root_output_dir):
         os.mkdir(args.root_output_dir)
+    
+    if args.resume != "":
+        args.root_output_dir = args.resume
+    elif args.dir_name == "":
+        dt = datetime.datetime.now() + datetime.timedelta(hours=9)
+        args.root_output_dir = os.path.join(args.root_output_dir,dt.strftime('%m-%d_%H:%M'))
+    else:
+        args.root_output_dir = os.path.join(args.root_output_dir,args.dir_name)
 
-    dt = datetime.datetime.now() + datetime.timedelta(hours=9)
-    args.root_output_dir = os.path.join(args.root_output_dir,dt.strftime('%m-%d_%H:%M'))
     if not os.path.exists(args.root_output_dir):
         os.mkdir(args.root_output_dir)
 
     start_time = time()
 
-    optimizer = Random_Optimizer(args=args)
+    optimizer = Optimizer(args=args)
     optimizer.optimize()
 
     end_time = time()

@@ -309,9 +309,11 @@ Model5:
 
 Model6:
   settings:
-    patience: 5
-    max_generations: 30
+    max_generations: 100
     immigration_size: 10
+    processes: 4
+    immigration_frequency: 1
+    immigration_type : no_immigration
   operetors:
     - name: GPT
       LLM:
@@ -399,9 +401,11 @@ Model6:
 
 Model7:
   settings:
-    patience: 5
-    max_generations: 30
+    max_generations: 100
     immigration_size: 10
+    processes: 3
+    immigration_frequency: 1
+    immigration_type : no_immigration
   operetors:
     - name: Gemma
       LLM:
@@ -463,7 +467,7 @@ Model7:
             Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that is a greater inhibitor of JNK3.\n\n
 
 
-test2:
+biot5:
     - LLM: BioT5
       LLM_type: clm
       name: BioT5
@@ -474,43 +478,7 @@ test2:
       prompt_template: |
             Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that looks more like a drug.\n\n
 
-test3:
-    - LLM: "openai/gpt-oss-20b:free"
-      LLM_type: openrouter
-      name: llama
-      population_size: 100
-      offspring_size: 50
-      interval: 0.0
-      task: qed
-      prompt_template: |
-            I have two molecules and their QED score. The QED score measures the drug-likeness of the molecule.
-
-            <<<ParentInfo>>>
-
-            You are a skilled chemist AI tasked with generating new molecule from given parent. Follow the instructions below to propose one new molecule.
-            
-            1. Input: Consists of two parent molecules, each with its SMILES and QED score.
-
-            2. Molecular Operation Process:
-            Please propose a new molecule that has a higher QED score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.
-
-            3. Output Format: Output one new molecule once in the strict JSON format below.
-            Include <<<json start>>> and <<<json end>>> at the beginning and end of the json file.
-            Entry must include the SMILES of the new molecule and a logical explanation of the operation.
-            
-            <<<json start>>>
-            {
-                "SMILES": "SMILES of the generated molecule",
-                "Explanation": "Logical explanation of the operation ... "
-            }
-            <<<json end>>>
-
-            Here are the requirements:
-            1. Explaination should be a logical explanation of the operation.
-            2. The SMILES should be the smiles of your propsosed molecule.
-            3. The molecule should be valid.
-
-test4:
+llasmol:
     - name: LlaSMol
       LLM:
         name: LlaSMol
@@ -522,7 +490,7 @@ test4:
       prompt_template: |
             Could you modify <SMILES> <<<SMILES>>> </SMILES> to increase QED score ?
 
-test5:
+drugassist:
     - name: DrugAssist
       LLM:
         name: drugassist-instruct
@@ -536,7 +504,7 @@ test5:
             [INST] {Increase the QED value of the following molecule while ensuring it remains similar to the original molecule.
             <<<SMILES>>>} [/INST]
 
-test6:
+qwen:
     - name: Qwen3
       LLM:
         name: qwen3:8b
@@ -567,7 +535,7 @@ test6:
             }
             <<<json end>>>
 
-test7:
+deepseek:
     - name: DeepSeek
       LLM:
         name: deepseek-r1:8b
@@ -598,7 +566,7 @@ test7:
             }
             <<<json end>>>
 
-test8:
+gemma:
     - name: Gemma
       LLM:
         name: gemma2:9b
@@ -624,7 +592,7 @@ test8:
             }
             <<<json end>>>
 
-test10:
+gpt:
     - name: GPT
       LLM:
         name: gpt-oss:20b
@@ -650,7 +618,7 @@ test10:
             }
             <<<json end>>>
 
-test11:
+gemini:
     - name: gemini
       LLM:
         name: gemini-2.5-flash
