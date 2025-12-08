@@ -46,14 +46,12 @@ class Optimizer:
         elif self.args.resume != "": self.resume(composition)
 
     def load_composition(self):
-        composition = None
         with open(self.args.composition_file, 'r', encoding='utf-8') as f:
             composition = yaml.safe_load(f)[self.args.model]
         return composition
 
     def make_islands(self, composition):
         for comps in composition["operetors"]:
-            LLM = None
             if comps["LLM"]["type"] == "clm":
                 if comps["LLM"]["name"] == "BioT5":
                     LLM = BioT5(comps)
@@ -110,12 +108,10 @@ class Optimizer:
             return
         # 各島（宛先）に対して、別の島（供給源）から移民を受け入れるプロセス
         for target in range(len(self.islands)):
-            source = None
             # 宛先の島と供給源の島が同じにならないように、ランダムに供給源の島を選択する
             while(True):
-                candidate = random.randint(0,len(self.islands)-1)
-                if target != candidate:
-                    source = candidate
+                source = random.randint(0,len(self.islands)-1)
+                if target != source:
                     break
             
             target_smis = [mlc.smi for mlc in self.islands[target].population]
@@ -173,61 +169,6 @@ class Optimizer:
             if sim > max_sim:
                 max_sim = sim
         return max_sim
-
-    def cluster_novelty_immigration(self, max_cluster_size=5, cut_off_threshold=0.3): 
-        if len(self.islands) <= 1:
-            return
-        
-        islands_immigrants = [[] for _ in self.islands]
-        islands_removes = [[] for _ in self.islands]
-        
-        # 各島をループして、クラスタの過密抑制とニッチ充填を行う
-        for target_index in range(len(self.islands)):
-            target_island = self.islands[target_index]
-            
-            # 1. 過密クラスタから個体を削除する
-            # 島内の個体群をクラスタリング
-            clusters = self.cluster_population(self.islands[target_index].population, cutoff=cut_off_threshold)
-            
-            remove_mlcs_index = []
-            for cluster in clusters:
-                # クラスタサイズが上限を超えている場合
-                if len(cluster) > max_cluster_size:
-                    # スコアでソートし、スコアの低い個体（超過分）を削除対象とする
-                    sorted_cluster = sorted(cluster, reverse=True)
-                    remove_mlcs = sorted_cluster[max_cluster_size:]
-                    remove_mlcs_index.extend([target_island.population.index(mlc) for mlc in remove_mlcs if target_island.population.index(mlc) not in remove_mlcs_index])
-
-            immigrants = []
-            # 2. 削除して空いたスペースに、島に存在しない有望なクラスタから個体を補充する
-            if len(remove_mlcs_index) > 0:
-                target_smis = {mlc.smi for mlc in target_island.population}
-
-                other_population = []
-                for idx in range(len(self.islands)):
-                    if idx == target_index:
-                        continue
-                    other_population.extend(self.islands[idx].population)
-
-                # 他の島の個体群から、現在の島に対する新規性が高い（最大類似度が低い）個体を選ぶ
-                # (個体, 現在の島との最大類似度) のタプルのリストを作成
-                immigrant_candidates = [(mlc, self.max_similarity(mlc, target_island.population)) for mlc in other_population if mlc.smi not in target_smis]
-                # 最大類似度が低い順（新規性が高い順）にソート
-                immigrant_candidates.sort(key=lambda x: x[1])
-                # 移住させる個体を決定
-                immigrants = [mlc for mlc, _ in immigrant_candidates]
-                immigrants = immigrants[:len(remove_mlcs_index)]
-
-                print(f"Island {target_index}: Removed {len(remove_mlcs_index)} individuals, Immigrated {len(immigrants)} individuals.")
-            
-            islands_removes[target_index].extend(remove_mlcs_index) 
-            islands_immigrants[target_index].extend(immigrants)
-
-        # 各島で、評価の低い個体を移民と入れ替えるプロセス
-        for target_index in range(len(self.islands)):
-            for j, remove_index in enumerate(islands_removes[target_index]):
-                self.islands[target_index].population[remove_index] = islands_immigrants[target_index][j]
-            self.islands[target_index].population.sort(reverse=True)
 
     def cluster_novelty_immigration(self, max_cluster_size=5, cut_off_threshold=0.3): 
         if len(self.islands) <= 1:

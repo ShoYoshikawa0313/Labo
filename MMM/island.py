@@ -70,7 +70,6 @@ class Island():
         defaultはreverse=Falseです。
         """
         # スコアを抽出
-        population_scores = None
         if reverse == False:
             population_scores = [mlc.score for mlc in self.population]
         else:
@@ -162,7 +161,7 @@ class Island():
         output_file_path = os.path.join(population_dir, 'population_' + suffix + '.yaml') # 接尾辞を付けた出力ファイルパスを設定します。
 
         with open(output_file_path, 'w') as f: # 出力ファイルを書き込みモードで開きます。
-            # SMILESをキー、スコアを値とする辞書を作成します。
+            # SMILESをキー、スコアを値とする辞書を作成します。      
             result_dict = { mlc.smi : mlc.to_dict() for mlc in self.population}
             yaml.dump(result_dict, f, sort_keys=False) # 作成した辞書をYAML形式でファイルに書き込みます。
 
