@@ -175,7 +175,7 @@ class Optimizer:
             return
         
         islands_immigrants = [[] for _ in self.islands]
-        islands_removes = [[] for _ in self.islands]
+        islands_remove_indeces = [[] for _ in self.islands]
         
         # 各島をループして、クラスタの過密抑制とニッチ充填を行う
         for target_index in range(len(self.islands)):
@@ -212,17 +212,19 @@ class Optimizer:
                 immigrant_candidates.sort(key=lambda x: x[1])
                 # 移住させる個体を決定
                 immigrants = [mlc for mlc, _ in immigrant_candidates]
-                immigrants = immigrants[:len(remove_mlcs_index)]
+                immigrants = immigrants[:self.immigrants_size]
 
                 print(f"Island {target_index}: Removed {len(remove_mlcs_index)} individuals, Immigrated {len(immigrants)} individuals.")
             
-            islands_removes[target_index].extend(remove_mlcs_index) 
+            islands_remove_indeces[target_index].extend(remove_mlcs_index) 
             islands_immigrants[target_index].extend(immigrants)
 
         # 各島で、評価の低い個体を移民と入れ替えるプロセス
         for target_index in range(len(self.islands)):
-            for j, remove_index in enumerate(islands_removes[target_index]):
-                self.islands[target_index].population[remove_index] = islands_immigrants[target_index][j]
+            for remove_index in islands_remove_indeces[target_index]:
+                del self.islands[target_index].population[remove_index]
+            for immigrant in islands_immigrants[target_index]:
+                self.islands[target_index].population.append(immigrant)
             self.islands[target_index].population.sort(reverse=True)
 
     def finish(self):
