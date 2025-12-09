@@ -174,29 +174,26 @@ class Optimizer:
         if len(self.islands) <= 1:
             return
         
-        islands_immigrants = [[] for _ in self.islands]
-        islands_remove_indeces = [[] for _ in self.islands]
-        
         # 各島をループして、クラスタの過密抑制とニッチ充填を行う
-        for target_index in range(len(self.islands)):
-            target_island = self.islands[target_index]
+        for target_index , target_island in enumerate(self.islands):
             
             # 1. 過密クラスタから個体を削除する
             # 島内の個体群をクラスタリング
             clusters = self.cluster_population(self.islands[target_index].population, cutoff=cut_off_threshold)
             
-            remove_mlcs_index = []
+            remove_smis = []
             for cluster in clusters:
                 # クラスタサイズが上限を超えている場合
                 if len(cluster) > max_cluster_size:
                     # スコアでソートし、スコアの低い個体（超過分）を削除対象とする
                     sorted_cluster = sorted(cluster, reverse=True)
-                    remove_mlcs = sorted_cluster[max_cluster_size:]
-                    remove_mlcs_index.extend([target_island.population.index(mlc) for mlc in remove_mlcs if target_island.population.index(mlc) not in remove_mlcs_index])
+                    remove_smis.extend([mlc.smi for mlc in sorted_cluster[max_cluster_size:]])
+            
+            remove_smis = list(set(remove_smis)) # 重複する削除候補をなくす
 
             immigrants = []
             # 2. 削除して空いたスペースに、島に存在しない有望なクラスタから個体を補充する
-            if len(remove_mlcs_index) > 0:
+            if len(remove_smis) > 0:
                 target_smis = {mlc.smi for mlc in target_island.population}
 
                 other_population = []
@@ -212,20 +209,15 @@ class Optimizer:
                 immigrant_candidates.sort(key=lambda x: x[1])
                 # 移住させる個体を決定
                 immigrants = [mlc for mlc, _ in immigrant_candidates]
-                immigrants = immigrants[:self.immigrants_size]
+                immigrants = immigrants[:self.immigrants_size] if len(remove_smis) > self.immigrants_size else immigrants[:len(remove_smis)]
 
-                print(f"Island {target_index}: Removed {len(remove_mlcs_index)} individuals, Immigrated {len(immigrants)} individuals.")
+                print(f"Island {target_index}: Removed {len(remove_smis)} individuals, Immigrated {len(immigrants)} individuals.")
             
-            islands_remove_indeces[target_index].extend(remove_mlcs_index) 
-            islands_immigrants[target_index].extend(immigrants)
-
-        # 各島で、評価の低い個体を移民と入れ替えるプロセス
-        for target_index in range(len(self.islands)):
-            for remove_index in islands_remove_indeces[target_index]:
-                del self.islands[target_index].population[remove_index]
-            for immigrant in islands_immigrants[target_index]:
-                self.islands[target_index].population.append(immigrant)
-            self.islands[target_index].population.sort(reverse=True)
+            # 削除対象ではない個体で新しいpopulationを構築
+            target_island.population = [mlc for mlc in target_island.population if mlc.smi not in remove_smis]
+            # 移民を追加
+            target_island.population.extend(immigrants)
+            target_island.population.sort(reverse=True)
 
     def finish(self):
         cnt = 0
