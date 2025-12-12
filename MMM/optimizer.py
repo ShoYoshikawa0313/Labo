@@ -116,7 +116,7 @@ class Optimizer:
             
             target_smis = [mlc.smi for mlc in self.islands[target].population]
             while(len(islands_immigrants[target]) < self.immigrants_size):
-                index = self.islands[source].weighted_random_select(1)[0]
+                index = random.randint(0, len(self.islands[source].population) - 1)
                 immigrant_mlc = self.islands[source].population[index]
                 if immigrant_mlc.smi not in target_smis:
                     islands_immigrants[target].append(immigrant_mlc)
@@ -125,7 +125,7 @@ class Optimizer:
         for target_index in range(len(self.islands)):
             # 宛先の島から、評価値が低い個体を逆重み付けランダムサンプリングで選択する
             # これにより、評価の低い個体が置換の対象となる
-            indices = self.islands[target_index].weighted_random_select(self.immigrants_size, reverse=True)
+            indices = random.sample(range(len(self.islands[target_index].population)), self.immigrants_size)
             # 選択された評価の低い個体を、対応する移民の個体と入れ替える
             for j, index in enumerate(indices):
                 self.islands[target_index].population[index] = islands_immigrants[target_index][j]
