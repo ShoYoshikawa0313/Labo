@@ -13,13 +13,15 @@ class Args:
         self.resume = resume
 
 process_composits = [
-    Args(model="QED",composition_file="composition.yaml",root_output_dir="results",dir_name="QED_1",seed=0),
-    Args(model="DRD2",composition_file="composition.yaml",root_output_dir="results",dir_name="DRD2_1",seed=0),
-    Args(model="GSK3B",composition_file="composition.yaml",root_output_dir="results",dir_name="GSK3B_1",seed=0),
-    Args(model="Mestranol",composition_file="composition.yaml",root_output_dir="results",dir_name="Mestranol_1",seed=0),
-    Args(model="Thiothixene",composition_file="composition.yaml",root_output_dir="results",dir_name="Thiothixene_1",seed=0),
-    Args(model="Perindopril",composition_file="composition.yaml",root_output_dir="results",dir_name="Perindopril_1",seed=0),
-    Args(model="Isomer",composition_file="composition.yaml",root_output_dir="results",dir_name="Isomer_1",seed=0),
+    Args(model="JNK3",composition_file="composition.yaml",root_output_dir="results",dir_name="cluster_jnk3_1",seed=0),
+    Args(model="JNK3",composition_file="composition.yaml",root_output_dir="results",dir_name="cluster_jnk3_2",seed=1),
+    #Args(model="QED",composition_file="composition.yaml",root_output_dir="results",dir_name="QED_1",seed=0),
+    #Args(model="DRD2",composition_file="composition.yaml",root_output_dir="results",dir_name="DRD2_1",seed=0),
+    #Args(model="GSK3B",composition_file="composition.yaml",root_output_dir="results",dir_name="GSK3B_1",seed=0),
+    #Args(model="Mestranol",composition_file="composition.yaml",root_output_dir="results",dir_name="Mestranol_1",seed=0),
+    #Args(model="Thiothixene",composition_file="composition.yaml",root_output_dir="results",dir_name="Thiothixene_1",seed=0),
+    #Args(model="Perindopril",composition_file="composition.yaml",root_output_dir="results",dir_name="Perindopril_1",seed=0),
+    #Args(model="Isomer",composition_file="composition.yaml",root_output_dir="results",dir_name="Isomer_1",seed=0),
 ]
 
 for process_composit in process_composits:

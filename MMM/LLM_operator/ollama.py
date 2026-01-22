@@ -86,7 +86,7 @@ class Ollama:
         parent_info += f"[ ParentB : {parentB.smi} , {parentB.score:.3f} ]\n"
         return parent_info, parentA.smi, parentB.smi
 
-    def mating(self, mating_list, process_id=0):
+    def mating(self, mating_list, top_smi, process_id=0):
         families = []
         log = ""
         for i in tqdm(range(self.offspring_size), position=process_id, desc=f"{self.model_name:<15}"):

@@ -100,3 +100,26 @@ def population_similarity(population1, population2):
     avg_max_sim_2_to_1 = get_avg_max_similarity(fps2, fps1)
 
     return (avg_max_sim_1_to_2 + avg_max_sim_2_to_1) / 2.0
+
+def smiles_similarity(smi1, smi2):
+    """
+    2つのSMILES文字列間のTanimoto類似度を計算します。
+    Morganフィンガープリント（半径2、2048ビット）を使用します。
+
+    Args:
+        smi1 (str): 1つ目のSMILES文字列。
+        smi2 (str): 2つ目のSMILES文字列。
+
+    Returns:
+        float: Tanimoto類似度（0.0〜1.0）。SMILESが無効な場合は0.0を返します。
+    """
+    mol1 = Chem.MolFromSmiles(smi1)
+    mol2 = Chem.MolFromSmiles(smi2)
+
+    if mol1 is None or mol2 is None:
+        return 0.0
+
+    fp1 = AllChem.GetMorganFingerprintAsBitVect(mol1, 2, nBits=2048)
+    fp2 = AllChem.GetMorganFingerprintAsBitVect(mol2, 2, nBits=2048)
+
+    return DataStructs.TanimotoSimilarity(fp1, fp2)

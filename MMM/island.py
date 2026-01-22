@@ -196,7 +196,7 @@ class Island():
         indices = self.weighted_random_select(self.offspring_size)
         mating_list = [next_population[index] for index in indices]
 
-        families = self.LLM.mating(mating_list, process_id)
+        families = self.LLM.mating(mating_list, self.population[0].smi, process_id)
         offsprings = self.families2mlcs(families)
         self.last_offsprings = offsprings
 

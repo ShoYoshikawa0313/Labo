@@ -75,7 +75,8 @@ JNK3:
     immigration_size: 10
     processes: 3
     immigration_frequency: 1
-    immigration_type : no_imm
+    immigration_type : random
+    patience: 100
   operetors:
     - name: Gemma
       LLM:
@@ -132,6 +133,7 @@ JNK3:
         URL: "http://10.34.35.195:5001"
       population_size: 100
       offspring_size: 50
+      bin_size: 70
       interval: 0.0
       task: JNK3
       prompt_template: |

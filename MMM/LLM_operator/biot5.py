@@ -5,20 +5,19 @@ from rdkit import Chem
 
 # 自作モジュールのインポート
 import LLM_operator.crossover as co
+from evaluator import smiles_similarity
 
 
 class BioT5:
     def __init__(self, composit):
         
         self.offspring_size = composit["offspring_size"]
+        self.bin_size = composit["bin_size"]
         self.prompt_template = composit["prompt_template"]
         self.model_name = composit["LLM"]["name"]
 
         self.base_url = composit["LLM"]["URL"]
         self.endpoint = "/biot5/"
-
-        self.num_try = 0
-        self.num_error = 0
     
     def sanitize_smiles(self, smi):
         """
@@ -73,26 +72,17 @@ class BioT5:
             except:
                 print("Error : Invalid crossover in reproduce")
     
-    def mating(self, mating_list, process_id=0):
+    def mating(self, mating_list, top_smi,process_id=0):
         families = []
-        log = ""
-        for i in tqdm(range(self.offspring_size), position=process_id, desc=f"{self.model_name:<15}"):
+        for i in tqdm(range(self.bin_size), position=process_id, desc=f"{self.model_name:<15}"):
             while(True):
-                self.num_try += 1
                 inter_smi, parent1_smi, parent2_smi = self.reproduce(mating_list)
                 response_model, offspring_smi = self.request(inter_smi)
-                if offspring_smi is None:
-                    self.num_error += 1
-                    continue
-                log +=  f"\n{i} / {self.offspring_size} : {response_model} {offspring_smi}"
+                if offspring_smi is None: continue
                 families.append({"offspring":offspring_smi, "parent1":parent1_smi, "parent2":parent2_smi, "inter":inter_smi})
                 break
-        log += f"\n\nerror/try : {self.num_error}/{self.num_try}"
-        #print(log)
-        return families
+
+        families.sort(key=lambda x: smiles_similarity(x["offspring"], top_smi), reverse=True)
+        return families[:self.offspring_size]
     
         
-
-
-
-

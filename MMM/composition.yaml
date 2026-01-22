@@ -293,12 +293,13 @@ QED:
 
 JNK3:
   settings:
-    max_generations: 1000
+    max_generations: 100
     max_oralcle_calls: 10000
     immigration_size: 10
     processes: 3
     immigration_frequency: 1
-    immigration_type : no_imm
+    immigration_type : cluster
+    patience: 100
   operetors:
     - name: Gemma
       LLM:
@@ -355,6 +356,7 @@ JNK3:
         URL: "http://10.34.35.195:5000"
       population_size: 100
       offspring_size: 50
+      bin_size: 70
       interval: 0.0
       task: JNK3
       prompt_template: |
