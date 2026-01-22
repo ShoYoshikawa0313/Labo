@@ -14,7 +14,7 @@ class BioT5:
         self.prompt_template = composit["prompt_template"]
         self.model_name = composit["LLM"]["name"]
 
-        self.base_url = "http://10.34.35.194:5000"
+        self.base_url = composit["LLM"]["URL"]
         self.endpoint = "/biot5/"
 
         self.num_try = 0

@@ -50,7 +50,7 @@ class Ollama:
         params = {
         "model": self.model_name,
         "prompt": self.prompt_template.replace("<<<ParentInfo>>>",parents_info),
-        "keep_alive": 10,
+        "keep_alive": 120,
         "stream": False,
         "options": {
             "num_predict": self.max_length,

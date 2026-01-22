@@ -36,14 +36,19 @@ class Optimizer:
         composition = self.load_composition()
 
         self.max_generations = composition["settings"]["max_generations"]
+        self.max_oracle_calls = composition["settings"]["max_oralcle_calls"]
         self.immigrants_size = composition["settings"]["immigration_size"]
         self.processes = composition["settings"]["processes"]
         self.immigration_frequency = composition["settings"]["immigration_frequency"]
         self.immigration_type = composition["settings"]["immigration_type"]
+        self.patience = composition["settings"]["patience"]
 
         self.islands = []
         if self.args.resume == "": self.make_islands(composition)
         elif self.args.resume != "": self.resume(composition)
+
+        self.all_smiles = set()
+        self.all_scores = dict()
 
     def load_composition(self):
         with open(self.args.composition_file, 'r', encoding='utf-8') as f:
@@ -219,33 +224,73 @@ class Optimizer:
             target_island.population.extend(immigrants)
             target_island.population.sort(reverse=True)
 
+    def update_all_smiles(self, mlcs):
+        for mlc in mlcs:
+            self.all_smiles.add(mlc.smi)
+            self.all_scores[mlc.smi] = mlc.score
+
+    def early_stop(self):
+        top_scores = sorted(self.all_scores.values(), reverse=True)[:100]
+        new_score = np.mean(top_scores)
+
     def finish(self):
         cnt = 0
         for island in self.islands:
             if island.n_generation >= self.max_generations:
                 cnt += 1
-        return cnt == len(self.islands)
-    
+        max_generation_reached = cnt == len(self.islands)
+
+        max_oracle_calls_reached = len(self.all_smiles) >= self.max_oracle_calls
+
+        return max_generation_reached or max_oracle_calls_reached
+
     def optimize(self):
+        print(self.immigration_type)
         print(f"Max processes : {os.cpu_count()}")
+
+        for island in self.islands:
+            self.update_all_smiles(island.population)
+
+        old_score = np.mean(sorted(self.all_scores.values(), reverse=True)[:100])
+        patience = 0
+
         while(self.finish() == False):
             self.islands = Parallel(n_jobs=self.processes)(
                 delayed(parallel_shift)(island, self.immigration_frequency, i) for i, island in enumerate(self.islands)
             )
 
+            for island in self.islands:
+                self.update_all_smiles(island.last_offsprings)
+
             print("Before Immigration:")
             for island in self.islands:
                 island.log_intermediate()
 
-            if self.immigration_type == "no_immigration":
-                pass
+            if self.immigration_type == "no_imm":
+                print("No Immigration")
             elif self.immigration_type == "random":
+                print("Random Immigration")
                 self.random_immigration()
-            elif self.immigration_type == "cluster_novelty":
+            elif self.immigration_type == "cluster":
+                print("Cluster Immigration")
                 self.cluster_novelty_immigration(max_cluster_size=3,cut_off_threshold=0.5)
             else:
-                pass
+                print("Immigration Error")
+                return -1
             
             print("After Immigration:")
             for island in self.islands:
                 island.log_intermediate()
+
+            print(f"Total oracle calls: {len(self.all_smiles)} / {self.max_oracle_calls}")
+
+            new_score = np.mean(sorted(self.all_scores.values(), reverse=True)[:100])
+            if (new_score - old_score) < 1e-3:
+                patience += 1
+                if patience >= self.patience:
+                    print("Early stopping triggered.")
+                    break
+            else:
+                patience = 0
+            old_score = new_score
+

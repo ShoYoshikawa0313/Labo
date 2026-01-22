@@ -29,6 +29,7 @@ class Island():
         self.population_size = composit["population_size"]
         self.offspring_size = composit["offspring_size"]
 
+        self.last_offsprings = None
         self.population = None
         if resume_point == "": self.population = self.initial_population()
         elif resume_point != "": self.population = self.resume_population(resume_point)
@@ -197,6 +198,7 @@ class Island():
 
         families = self.LLM.mating(mating_list, process_id)
         offsprings = self.families2mlcs(families)
+        self.last_offsprings = offsprings
 
         # 現世代の集団に新しく生成した子孫集団を追加
         next_population += offsprings

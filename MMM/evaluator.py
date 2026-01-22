@@ -8,6 +8,7 @@ from rdkit.Chem import AllChem
 class Evaluator:
     _oracles = {}
     _diversities = {}
+    oracle_calls = 0
 
     def __init__(self, task):
         self.task = task
