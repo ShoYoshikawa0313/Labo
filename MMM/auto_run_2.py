@@ -15,9 +15,9 @@ class Args:
 process_composits = [
     #Args(model="Long_Qwen",composition_file="composition2.yaml",root_output_dir="results",dir_name="Long_Qwen",seed=0),
     #Args(model="JNK3",composition_file="composition2.yaml",root_output_dir="results",dir_name="random_jnk3_1",seed=0),
-    Args(model="QED",composition_file="composition2.yaml",root_output_dir="results",dir_name="random_QED_2",seed=1),
-    Args(model="DRD2",composition_file="composition2.yaml",root_output_dir="results",dir_name="random_DRD2_2",seed=1),
-    Args(model="GSK3B",composition_file="composition2.yaml",root_output_dir="results",dir_name="random_GSK3B_2",seed=1),
+    #Args(model="QED",composition_file="composition2.yaml",root_output_dir="results",dir_name="random_QED_2",seed=1),
+    #Args(model="DRD2",composition_file="composition2.yaml",root_output_dir="results",dir_name="random_DRD2_2",seed=1),
+    #Args(model="GSK3B",composition_file="composition2.yaml",root_output_dir="results",dir_name="random_GSK3B_2",seed=1),
     Args(model="Mestranol",composition_file="composition2.yaml",root_output_dir="results",dir_name="random_Mestranol_2",seed=1),
     Args(model="Thiothixene",composition_file="composition2.yaml",root_output_dir="results",dir_name="random_Thiothixene_2",seed=1),
     Args(model="Perindopril",composition_file="composition2.yaml",root_output_dir="results",dir_name="random_Perindopril_2",seed=1),
