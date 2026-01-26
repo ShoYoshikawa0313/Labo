@@ -5,7 +5,7 @@ QED:
     immigration_size: 10
     processes: 3
     immigration_frequency: 1
-    immigration_type : no_imm
+    immigration_type : random
     patience: 5
   operetors:
     - name: Gemma
@@ -63,6 +63,7 @@ QED:
         URL: "http://10.34.35.195:5001"
       population_size: 100
       offspring_size: 50
+      bin_size: 70
       interval: 0.0
       task: QED
       prompt_template: |
@@ -146,7 +147,7 @@ DRD2:
     immigration_size: 10
     processes: 3
     immigration_frequency: 1
-    immigration_type : no_imm
+    immigration_type : random
     patience: 5
   operetors:
     - name: Gemma
@@ -204,6 +205,7 @@ DRD2:
         URL: "http://10.34.35.195:5001"
       population_size: 100
       offspring_size: 50
+      bin_size: 70
       interval: 0.0
       task: DRD2
       prompt_template: |
@@ -216,7 +218,7 @@ GSK3B:
     immigration_size: 10
     processes: 3
     immigration_frequency: 1
-    immigration_type : no_imm
+    immigration_type : random
     patience: 5
   operetors:
     - name: Gemma
@@ -274,6 +276,7 @@ GSK3B:
         URL: "http://10.34.35.195:5001"
       population_size: 100
       offspring_size: 50
+      bin_size: 70
       interval: 0.0
       task: GSK3B
       prompt_template: |
@@ -286,7 +289,7 @@ Mestranol:
     immigration_size: 10
     processes: 3
     immigration_frequency: 1
-    immigration_type : no_imm
+    immigration_type : random
     patience: 5
   operetors:
     - name: Gemma
@@ -344,6 +347,7 @@ Mestranol:
         URL: "http://10.34.35.195:5001"
       population_size: 100
       offspring_size: 50
+      bin_size: 70
       interval: 0.0
       task: Mestranol_Similarity
       prompt_template: |
@@ -356,7 +360,7 @@ Thiothixene:
     immigration_size: 10
     processes: 3
     immigration_frequency: 1
-    immigration_type : no_imm
+    immigration_type : random
     patience: 5
   operetors:
     - name: Gemma
@@ -414,6 +418,7 @@ Thiothixene:
         URL: "http://10.34.35.195:5001"
       population_size: 100
       offspring_size: 50
+      bin_size: 70
       interval: 0.0
       task: Thiothixene_Rediscovery
       prompt_template: |
@@ -426,7 +431,7 @@ Perindopril:
     immigration_size: 10
     processes: 3
     immigration_frequency: 1
-    immigration_type : no_imm
+    immigration_type : random
     patience: 5
   operetors:
     - name: Gemma
@@ -484,6 +489,7 @@ Perindopril:
         URL: "http://10.34.35.195:5001"
       population_size: 100
       offspring_size: 50
+      bin_size: 70
       interval: 0.0
       task: Perindopril_MPO
       prompt_template: |
@@ -496,7 +502,7 @@ Isomer:
     immigration_size: 10
     processes: 3
     immigration_frequency: 1
-    immigration_type : no_imm
+    immigration_type : random
     patience: 5
   operetors:
     - name: Gemma
@@ -554,6 +560,7 @@ Isomer:
         URL: "http://10.34.35.195:5001"
       population_size: 100
       offspring_size: 50
+      bin_size: 70
       interval: 0.0
       task: Isomers_C9H10N2O2PF2Cl
       prompt_template: |
@@ -566,7 +573,7 @@ Deco_hop:
     immigration_size: 10
     processes: 3
     immigration_frequency: 1
-    immigration_type : no_imm
+    immigration_type : random
     patience: 5
   operetors:
     - name: Gemma
@@ -638,7 +645,67 @@ Deco_hop:
         URL: "http://10.34.35.195:5001"
       population_size: 100
       offspring_size: 50
+      bin_size: 70
       interval: 0.0
       task: Deco Hop
       prompt_template: |
             Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that does not contain the substructure [#7]-c1ccc2ncsc2c1, does not contain the substructure CS([#6])(=O)=O, contains the scaffold [#7]-c1n[c;h1]nc2[c;h1]c(-[#8])[c;h0][c;h1]c12, and is similar to [C][C][C][O][C][=C][C][=N][C][=N][C][Branch1][#C][N][C][=C][C][=C][N][=C][S][C][Ring1][Branch1][=C] [Ring1][=Branch2][=C][Ring1][S][C][=C][Ring2][Ring1][Ring2][S][=Branch1][C][=O][=Branch1][C][=O][C][Branch1][C][C][Branch1][C][C][C]
+
+Long_Qwen:
+  settings:
+    max_generations: 100
+    max_oralcle_calls: 100000
+    immigration_size: 10
+    processes: 2
+    immigration_frequency: 1
+    immigration_type : no_imm
+    patience: 100
+  operetors:
+    - name: Qwen3_1
+      LLM:
+        name: qwen3:8b
+        type: ollama
+        URL: "http://10.34.35.195:11436"
+      population_size: 300
+      offspring_size: 150
+      interval: 0.0
+      task: JNK3
+      prompt_template: |
+            I have two molecules and their JNK3 scores. The JNK3 score measures a moleculars biological activity against JNK3.
+            <<<ParentInfo>>>
+            Please propose a new molecule that has a higher JNK3 score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.
+            
+            Output Format: Output one new molecule once in the strict JSON format below.
+            Include <<<json start>>> and <<<json end>>> at the beginning and end of the json file.
+            Entry must include the SMILES of the new molecule and a logical explanation of the operation.
+            
+            <<<json start>>>
+            {
+                "SMILES": "SMILES of the generated molecule",
+                "Explanation": "Logical explanation of the operation ... "
+            }
+            <<<json end>>>
+    - name: Qwen3_2
+      LLM:
+        name: qwen3:8b
+        type: ollama
+        URL: "http://10.34.35.195:11437"
+      population_size: 300
+      offspring_size: 150
+      interval: 0.0
+      task: JNK3
+      prompt_template: |
+            I have two molecules and their JNK3 scores. The JNK3 score measures a moleculars biological activity against JNK3.
+            <<<ParentInfo>>>
+            Please propose a new molecule that has a higher JNK3 score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.
+            
+            Output Format: Output one new molecule once in the strict JSON format below.
+            Include <<<json start>>> and <<<json end>>> at the beginning and end of the json file.
+            Entry must include the SMILES of the new molecule and a logical explanation of the operation.
+            
+            <<<json start>>>
+            {
+                "SMILES": "SMILES of the generated molecule",
+                "Explanation": "Logical explanation of the operation ... "
+            }
+            <<<json end>>>
