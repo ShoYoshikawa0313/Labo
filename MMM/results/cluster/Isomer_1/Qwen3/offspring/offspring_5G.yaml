@@ -1,174 +1,258 @@
-O=C(NCCF)c1ccc2nc(NCCl)sc2c1:
-  smi: O=C(NCCF)c1ccc2nc(NCCl)sc2c1
-  parent1_smi: O=C(NCCF)c1ccc2nc(NCCl)sc2c1
-  parent2_smi: CC(C)C(=O)Nc1ccc(F)cc1Cl
+O=C(O)c1ccc2nc(NCCBr)sc2c1F:
+  smi: O=C(O)c1ccc2nc(NCCBr)sc2c1F
+  parent1_smi: O=C(O)c1ccc2nc(NCCO)sc2c1F
+  parent2_smi: CC(C)C(=O)Nc1cc(F)cc(Cl)c1Br
   inter_smi: ''
-  score: 0.5352614285189902
-NC(=S)C1CN(c2cc(F)cc(Cl)n2)CCO1:
-  smi: NC(=S)C1CN(c2cc(F)cc(Cl)n2)CCO1
-  parent1_smi: NC(=S)C1CN(c2cc(F)cc(Cl)n2)CCO1
-  parent2_smi: O=C(NCc1ccc(F)cc1)C(Cl)C(F)Cl
+  score: 0.569782824730923
+CN(C)C(=O)Nc1ccc(F)cc1N=O:
+  smi: CN(C)C(=O)Nc1ccc(F)cc1N=O
+  parent1_smi: CN(C)C(=O)Nc1ccccc1N=O
+  parent2_smi: CC1=C(C(N)=S)Cc2cc(F)cc(Cl)c2NC1=O
+  inter_smi: ''
+  score: 0.7316156289466419
+O=C1N=C(C(F)(F)F)N=C2CCN(CC3CCCCC3)CC12:
+  smi: O=C1N=C(C(F)(F)F)N=C2CCN(CC3CCCCC3)CC12
+  parent1_smi: O=C1N=C(C(F)(F)F)N=C2CCCC[C@@H]12
+  parent2_smi: O=CNC(c1ccccc1)C(F)(F)N=O
+  inter_smi: ''
+  score: 4.425510141210735e-06
+O=C(O)c1ccc(Oc2ccc(C(F)(F)F)cc2NC(=O)c2ccccc2Cl)cc1:
+  smi: O=C(O)c1ccc(Oc2ccc(C(F)(F)F)cc2NC(=O)c2ccccc2Cl)cc1
+  parent1_smi: O=C(O)c1ccccc1Oc1ccc(C(F)(F)F)cc1
+  parent2_smi: CC1=C(C(N)=S)Cc2cc(F)cc(Cl)c2NC1=O
+  inter_smi: ''
+  score: 8.315287191035679e-07
+NC(=S)c1ccc(C(=O)NCCO)cc1Cl:
+  smi: NC(=S)c1ccc(C(=O)NCCO)cc1Cl
+  parent1_smi: NC(=S)c1ccc(C(=O)NCCO)cc1F
+  parent2_smi: NC(=S)[C@@H]1CN(c2ncc(Cl)cc2F)CCO1
+  inter_smi: ''
+  score: 0.645648526427892
+CC(C)C(=O)Nc1cc(F)cc(Cl)c1Br:
+  smi: CC(C)C(=O)Nc1cc(F)cc(Cl)c1Br
+  parent1_smi: CC(C)C(=O)Nc1cc(F)cc(Cl)c1Br
+  parent2_smi: CC(C)C(=O)Nc1cc(F)cc(Cl)c1
+  inter_smi: ''
+  score: 0.6872892787909721
+NC1=CC(S(=O)(=O)F)C(C(=O)NC(F)(F)C(=O)N2CCC(CO)CC2)=CC1=O:
+  smi: NC1=CC(S(=O)(=O)F)C(C(=O)NC(F)(F)C(=O)N2CCC(CO)CC2)=CC1=O
+  parent1_smi: COC1=CC(=O)C(N)=CC1S(=O)(=O)F
+  parent2_smi: O=NC(F)(F)C(=O)N1CCC(CO)CC1
+  inter_smi: ''
+  score: 1.9638082208988035e-06
+O=C(O)c1ccc2nc(NCCO)sc2c1F:
+  smi: O=C(O)c1ccc2nc(NCCO)sc2c1F
+  parent1_smi: O=C(O)c1ccc2nc(NCCO)sc2c1F
+  parent2_smi: COC1C=CC=Cc2ccc(nc2F)NC1=O
   inter_smi: ''
   score: 0.676633846161729
-O=C(Nc1ccc(C(F)Cl)cc1)C(F)(F)Cl:
-  smi: O=C(Nc1ccc(C(F)Cl)cc1)C(F)(F)Cl
-  parent1_smi: O=C(Nc1ccc(C(F)Cl)cc1)C(F)(F)Cl
-  parent2_smi: O=C([O-])COC(=O)CC=Cc1ccc(F)cc1
+O=C1N=C(C(F)(F)F)N=C2CCCCC12:
+  smi: O=C1N=C(C(F)(F)F)N=C2CCCCC12
+  parent1_smi: CN1N=C(O)C(C(=O)N2CCC(F)(F)N2)NC1=O
+  parent2_smi: O=C1N=C(C(F)(F)F)N=C2CCCC[C@@H]12
   inter_smi: ''
-  score: 0.18211352912101367
-O=C(NC(CO)C(F)Cl)c1cccnc1:
-  smi: O=C(NC(CO)C(F)Cl)c1cccnc1
-  parent1_smi: O=C(NC(CO)C(F)Cl)c1cccnc1
-  parent2_smi: Cc1ccncc1CCl
-  inter_smi: ''
-  score: 0.8290291181804004
-Fc1ccc(C(=S)Nc2c(F)cc(Cl)cc2-c2ccc(C(F)(F)F)cc2)cc1:
-  smi: Fc1ccc(C(=S)Nc2c(F)cc(Cl)cc2-c2ccc(C(F)(F)F)cc2)cc1
-  parent1_smi: NC(=S)Nc1c(F)cc(Cl)cc1-c1ccccc1
-  parent2_smi: Fc1ccccc1-c1ccncc1CCl
-  inter_smi: ''
-  score: 2.014609670997261e-05
-O=C(NCc1ccc2ncsc2c1)C(F)(Cl)NCc1cccnc1:
-  smi: O=C(NCc1ccc2ncsc2c1)C(F)(Cl)NCc1cccnc1
-  parent1_smi: CN(C)C(F)(Cl)C(=O)NCc1ccc2ncsc2c1
-  parent2_smi: O=CN=CN(c1cccnc1C=O)C(F)F
-  inter_smi: ''
-  score: 0.0016772076189795154
-CC(F)(Cl)CNC(=O)c1ccc(C(N)=S)cc1:
-  smi: CC(F)(Cl)CNC(=O)c1ccc(C(N)=S)cc1
-  parent1_smi: NC(=S)c1ccc(C(=O)NCCF)cc1
-  parent2_smi: NC(=S)c1ccc(C(=O)NCCF)cc1
-  inter_smi: ''
-  score: 0.4723665527410147
-CC(C)C(=O)Nc1ccc(F)cc1SCCl:
-  smi: CC(C)C(=O)Nc1ccc(F)cc1SCCl
-  parent1_smi: O=C([O-])COC(=O)CC=Cc1ccc(F)cc1
-  parent2_smi: CC(C)C(=O)Nc1ccc(F)cc1Cl
-  inter_smi: ''
-  score: 0.32465246735834974
-NC(=O)c1ccc(C(=O)NCCF)cc1:
-  smi: NC(=O)c1ccc(C(=O)NCCF)cc1
-  parent1_smi: O=Cn1c2ccccc2c2ccccc21
-  parent2_smi: NC(=O)c1ccc(C(=O)NCCF)cc1
-  inter_smi: ''
-  score: 0.7202729799554398
-O=C(Nc1ccc(F)cc1Cl)c1cccnc1:
-  smi: O=C(Nc1ccc(F)cc1Cl)c1cccnc1
-  parent1_smi: O=C(Nc1ccc(F)cc1Cl)c1cccnc1
-  parent2_smi: NC(=S)C1=C(C(=O)Nc2cc(F)cc(Cl)c2)C(=O)NC1C(F)(F)F
-  inter_smi: ''
-  score: 0.3455907525769745
-NC=C1C=C(Cl)C1c1ccc2c(F)c(Cl)nc(Cl)c2c1:
-  smi: NC=C1C=C(Cl)C1c1ccc2c(F)c(Cl)nc(Cl)c2c1
-  parent1_smi: O=C([O-])COC(=O)CC=Cc1ccc(F)cc1
-  parent2_smi: NC=C1C=C(Cl)C1c1ccc2c(Cl)c(Cl)nc(Cl)c2c1
-  inter_smi: ''
-  score: 0.0860243399583936
-O=C(NC(CO)C(F)Cl)c1ccc(F)cc1:
-  smi: O=C(NC(CO)C(F)Cl)c1ccc(F)cc1
-  parent1_smi: O=C(NC(CO)C(F)Cl)c1ccc(F)cc1
-  parent2_smi: O=[N+]([O-])c1ccc2nc(NCCF)sc2c1
-  inter_smi: ''
-  score: 0.8161762130223398
-Cc1ccnc(C(=O)Nc2cc(F)cc(Cl)c2)c1:
-  smi: Cc1ccnc(C(=O)Nc2cc(F)cc(Cl)c2)c1
-  parent1_smi: Cc1ccnc(C(=O)Nc2cc(F)cc(Br)c2)c1
-  parent2_smi: NC(=S)C1=C(C(=O)Nc2cc(F)cc(Cl)c2)C(=O)NC1C(F)(F)F
-  inter_smi: ''
-  score: 0.3002544491440824
-O=C(NCC(F)Cl)C(F)CN=Cc1c(F)cccc1F:
-  smi: O=C(NCC(F)Cl)C(F)CN=Cc1c(F)cccc1F
-  parent1_smi: NC=C1C=C(Cl)C1c1ccc2c(Cl)c(Cl)nc(Cl)c2c1
-  parent2_smi: Fc1cccc(F)c1C=NCCCS
-  inter_smi: ''
-  score: 0.2865047968601901
-CC(OCC(F)(F)F)C(=O)Nc1cc(F)cc(Cl)c1:
-  smi: CC(OCC(F)(F)F)C(=O)Nc1cc(F)cc(Cl)c1
-  parent1_smi: CC(OCC(F)(F)F)C(=O)Nc1cc(F)cc(Cl)c1
-  parent2_smi: O=C(O)C=CC=C1CCCCN1
-  inter_smi: ''
-  score: 0.5028315779709409
-O=C(O)C(C(=O)Nc1ccc(Cl)cc1)C(O)(F)F:
-  smi: O=C(O)C(C(=O)Nc1ccc(Cl)cc1)C(O)(F)F
-  parent1_smi: C[C@@H](OCC(F)(F)F)C(=O)Nc1cc(F)cc(Br)c1
-  parent2_smi: O=C(O)C(C(=O)Nc1ccc(Cl)cc1)C(O)(F)F
-  inter_smi: ''
-  score: 0.4950358969261986
-O=Cc1cccnc1C(F)(F)NCc1ccncc1Cl:
-  smi: O=Cc1cccnc1C(F)(F)NCc1ccncc1Cl
-  parent1_smi: O=C(O)C=CC=C1CCCCN1
-  parent2_smi: O=Cc1cccnc1C(F)(F)NCc1ccncc1Cl
-  inter_smi: ''
-  score: 0.2649736213568966
-CC1NC(=O)C(F)(F)CCC1N=NC=O:
-  smi: CC1NC(=O)C(F)(F)CCC1N=NC=O
-  parent1_smi: CN(C)C(F)(Cl)C(=O)NCc1ccc2ncsc2c1
-  parent2_smi: O=CN=NC1CCC(F)(F)CN1C=O
-  inter_smi: ''
-  score: 0.7202729799554398
-O=C(NCc1ccc(F)cc1)C(Cl)C(F)Cl:
-  smi: O=C(NCc1ccc(F)cc1)C(Cl)C(F)Cl
-  parent1_smi: O=[N+]([O-])c1ccc2nc(NCCF)sc2c1
-  parent2_smi: O=C(NCc1ccc(F)cc1)C(Cl)C(F)Cl
-  inter_smi: ''
-  score: 0.645648526427892
-Fc1cccnc1-c1ccncc1CCl:
-  smi: Fc1cccnc1-c1ccncc1CCl
-  parent1_smi: O=C(O)C=CC=C1CCCCN1
-  parent2_smi: Fc1cccnc1-c1ccncc1CCl
-  inter_smi: ''
-  score: 0.32465246735834974
-O=Cc1cccnc1C(F)(F)NC(=O)c1ccccc1:
-  smi: O=Cc1cccnc1C(F)(F)NC(=O)c1ccccc1
-  parent1_smi: O=CN=CN(c1cccnc1C=O)C(F)F
-  parent2_smi: O=[S@](C[C@@H]1CCC[NH2+]1)c1ccc(F)cc1F
-  inter_smi: ''
-  score: 0.16071462536804407
-NC(=S)c1ccc(C(=O)NCCF)cc1:
-  smi: NC(=S)c1ccc(C(=O)NCCF)cc1
-  parent1_smi: O=C(NCc1ccc(F)cc1)C(Cl)C(F)Cl
-  parent2_smi: NC(=S)c1ccc(C(=O)NCCF)cc1
-  inter_smi: ''
-  score: 0.676633846161729
-CC(C)C(=O)Nc1ccc(F)cc1Cl:
-  smi: CC(C)C(=O)Nc1ccc(F)cc1Cl
-  parent1_smi: O=[S@](C[C@@H]1CCC[NH2+]1)c1ccc(F)cc1F
-  parent2_smi: CC(C)C(=O)Nc1ccc(F)cc1Cl
-  inter_smi: ''
-  score: 0.645648526427892
-O=C(NCc1ccc(F)cc1)C(F)C(F)Cl:
-  smi: O=C(NCc1ccc(F)cc1)C(F)C(F)Cl
-  parent1_smi: O=C(NCc1ccc(F)cc1)C(Cl)C(F)Cl
-  parent2_smi: NC(=S)C1=C(C(=O)Nc2cc(F)cc(Cl)c2)C(=O)NC1C(F)(F)F
-  inter_smi: ''
-  score: 0.645648526427892
-NC(=O)Nc1ccc(C(F)(F)F)cc1C(=O)OCC(F)(F)F:
-  smi: NC(=O)Nc1ccc(C(F)(F)F)cc1C(=O)OCC(F)(F)F
-  parent1_smi: NC(=S)Nc1ccc(C(=O)NC(CF)C(F)Cl)cc1
-  parent2_smi: CC(=O)Nc1ccc(F)cc1C(=O)OCC(F)(F)F
-  inter_smi: ''
-  score: 0.16071462536804407
-O=C(Nc1cc(F)cc(Br)c1CCl)c1cc(F)ccn1:
-  smi: O=C(Nc1cc(F)cc(Br)c1CCl)c1cc(F)ccn1
-  parent1_smi: Cc1ccnc(C(=O)Nc2cc(F)cc(Br)c2)c1
-  parent2_smi: Fc1cccnc1-c1ccncc1CCl
+  score: 0.635638673826052
+NC(=S)Nc1ccc(C(=O)NC(CO)C(F)Cl)cc1:
+  smi: NC(=S)Nc1ccc(C(=O)NC(CO)C(F)Cl)cc1
+  parent1_smi: CC(C)=NC(=O)NC1=NC(=O)NC1=O
+  parent2_smi: NC(=S)Nc1ccc(C(=O)NC(CO)C(F)Cl)cc1
   inter_smi: ''
   score: 0.24891968120366054
-O=C(Nc1ccc(C(F)Cl)cc1)C(F)Cl:
-  smi: O=C(Nc1ccc(C(F)Cl)cc1)C(F)Cl
-  parent1_smi: O=C(Nc1ccc(C(F)Cl)cc1)C(F)(F)Cl
-  parent2_smi: O=C(NCc1ccc(F)cc1)C(Cl)C(F)Cl
+COC1=CC(=O)C(N)=CC1S(=O)(=O)F:
+  smi: COC1=CC(=O)C(N)=CC1S(=O)(=O)F
+  parent1_smi: COC1=CC(=O)C(N)=CC1S(=O)(=O)F
+  parent2_smi: CC(Br)C1CCN(C(=O)C(F)(F)N=O)CC1
+  inter_smi: ''
+  score: 0.24891968120366054
+CC1(C(=O)Nc2cc(F)cc(Br)c2)CCC2=NC(C(F)(F)F)=NC(=O)C2C1:
+  smi: CC1(C(=O)Nc2cc(F)cc(Br)c2)CCC2=NC(C(F)(F)F)=NC(=O)C2C1
+  parent1_smi: O=C1N=C(C(F)(F)F)N=C2CCCC[C@@H]12
+  parent2_smi: NC(=S)c1ccc(C(=O)Nc2cc(F)cc(Br)c2)cc1
+  inter_smi: ''
+  score: 0.00020346836901064417
+CC1=C(C(N)=S)Cc2cc(Cl)cc(F)c2NC1=O:
+  smi: CC1=C(C(N)=S)Cc2cc(Cl)cc(F)c2NC1=O
+  parent1_smi: CC1=C(C(N)=S)Cc2cc(Cl)cc(F)c2NC1=O
+  parent2_smi: NC(=S)Nc1ccc(C(=O)NC(CO)C(F)Cl)cc1
+  inter_smi: ''
+  score: 0.4650431881340563
+NC(=O)c1ccc2nc(NCCO)sc2c1F:
+  smi: NC(=O)c1ccc2nc(NCCO)sc2c1F
+  parent1_smi: O=NC(F)(F)C(=O)N1CCC(CO)CC1
+  parent2_smi: NC(=O)c1ccc2nc(NCCO)sc2c1F
+  inter_smi: ''
+  score: 0.7316156289466419
+O=C(O)c1ccc2nc(NCCO)sc2c1Cl:
+  smi: O=C(O)c1ccc2nc(NCCO)sc2c1Cl
+  parent1_smi: O=C(O)c1ccc2nc(NCCO)sc2c1F
+  parent2_smi: NC(=S)[C@@H]1CN(c2ncc(Cl)cc2F)CCO1
+  inter_smi: ''
+  score: 0.5971272734216274
+NC(=O)c1ccc(C(=O)Nc2cc(F)cc(Cl)c2)cc1:
+  smi: NC(=O)c1ccc(C(=O)Nc2cc(F)cc(Cl)c2)cc1
+  parent1_smi: NC(=S)c1ccc(C(=O)Nc2cc(F)cc(Br)c2)cc1
+  parent2_smi: CC(C)=NC(=O)NC1=NC(=O)NC1=O
+  inter_smi: ''
+  score: 0.16071462536804407
+CC(C)=CC1=CNC(=O)C1SC(O)(F)F:
+  smi: CC(C)=CC1=CNC(=O)C1SC(O)(F)F
+  parent1_smi: CC(C)=CC1=CNC(=O)C1SC(O)(F)F
+  parent2_smi: NC1=CC(C(=O)OC(F)(F)S)N(C=O)C1
+  inter_smi: ''
+  score: 0.7667265960708202
+CC(C)C(=O)Nc1cc(F)cc(Cl)c1Cl:
+  smi: CC(C)C(=O)Nc1cc(F)cc(Cl)c1Cl
+  parent1_smi: CC(C)C(=O)Nc1cc(F)cc(Cl)c1Br
+  parent2_smi: O=C(O)CCCNC1CC(F)(Cl)C(Cl)=C(Cl)C1Cl
+  inter_smi: ''
+  score: 0.645648526427892
+CN1N=C(O)C(C(=O)N2CCC(F)(F)N2)NC1=O:
+  smi: CN1N=C(O)C(C(=O)N2CCC(F)(F)N2)NC1=O
+  parent1_smi: CN1N=C(O)C(C(=O)N2CCC(F)(F)N2)NC1=O
+  parent2_smi: COc1cc(Cl)cc(Cl)c1Oc1ccc(Cl)cc1Cl
+  inter_smi: ''
+  score: 0.391605626676799
+O=NC(F)(F)C(=O)NC1CCC(CO)C1:
+  smi: O=NC(F)(F)C(=O)NC1CCC(CO)C1
+  parent1_smi: O=NC(F)(F)C(=O)N1CCC(CO)CC1
+  parent2_smi: CC1=C(C(N)=S)Cc2cc(F)cc(Cl)c2NC1=O
+  inter_smi: ''
+  score: 0.6065306597126334
+NC(=S)Nc1ccc(C(=O)NC(CO)C(F)Cl)cc1Br:
+  smi: NC(=S)Nc1ccc(C(=O)NC(CO)C(F)Cl)cc1Br
+  parent1_smi: NC(=S)Nc1ccc(C(=O)NC(CO)C(F)Cl)cc1
+  parent2_smi: CC(C)C(=O)Nc1cc(F)cc(Cl)c1Br
+  inter_smi: ''
+  score: 0.34023286457404905
+COC1C=CC=Cc2ccc(nc2F)NC1=O:
+  smi: COC1C=CC=Cc2ccc(nc2F)NC1=O
+  parent1_smi: COC1C=CC=Cc2ccc(nc2F)NC1=O
+  parent2_smi: CC(=O)N1CCc2ccccc2C1
+  inter_smi: ''
+  score: 0.43686764570555725
+NC(=S)C1CN(c2nc(C(F)(F)F)cc(Cl)c2F)CCO1:
+  smi: NC(=S)C1CN(c2nc(C(F)(F)F)cc(Cl)c2F)CCO1
+  parent1_smi: O=C1N=C(C(F)(F)F)N=C2CCCC[C@@H]12
+  parent2_smi: NC(=S)C1CN(c2ncc(Cl)cc2F)CCO1
+  inter_smi: ''
+  score: 0.391605626676799
+CC(C)=NC(=O)NC1=NC(=O)NC1NC(=O)C(F)(F)N1CCC(F)(F)N1:
+  smi: CC(C)=NC(=O)NC1=NC(=O)NC1NC(=O)C(F)(F)N1CCC(F)(F)N1
+  parent1_smi: CC(C)=NC(=O)NC1=NC(=O)NC1=O
+  parent2_smi: CN1N=C(O)C(C(=O)N2CCC(F)(F)N2)NC1=O
+  inter_smi: ''
+  score: 0.0007559767017882707
+NC(=O)c1ccc2nc(NCCO)sc2c1Cl:
+  smi: NC(=O)c1ccc2nc(NCCO)sc2c1Cl
+  parent1_smi: NC(=O)c1ccc2nc(NCCO)sc2c1F
+  parent2_smi: CC(C)C(=O)Nc1cc(F)cc(Br)c1Cl
+  inter_smi: ''
+  score: 0.645648526427892
+CC(C)C(=O)Nc1ccc(F)cc1Cl:
+  smi: CC(C)C(=O)Nc1ccc(F)cc1Cl
+  parent1_smi: CN(C)C(=O)Nc1ccccc1N=O
+  parent2_smi: CC(C)C(=O)Nc1cc(F)cc(Br)c1Cl
+  inter_smi: ''
+  score: 0.645648526427892
+CC(C)C(=O)Nc1cc(F)cc(Cl)c1NC(=O)C1=C(C(N)=S)Cc2cc(F)cc(Cl)c2C1=O:
+  smi: CC(C)C(=O)Nc1cc(F)cc(Cl)c1NC(=O)C1=C(C(N)=S)Cc2cc(F)cc(Cl)c2C1=O
+  parent1_smi: CC1=C(C(N)=S)Cc2cc(F)cc(Cl)c2NC1=O
+  parent2_smi: CC(C)C(=O)Nc1cc(F)cc(Cl)c1
+  inter_smi: ''
+  score: 2.423531878049321e-10
+O=NC(F)(F)C(=O)Nc1cc(F)cc(Cl)c1:
+  smi: O=NC(F)(F)C(=O)Nc1cc(F)cc(Cl)c1
+  parent1_smi: CC(C)C(=O)Nc1cc(F)cc(Cl)c1
+  parent2_smi: O=NC(F)(F)C(=O)N1CCC(CO)CC1
+  inter_smi: ''
+  score: 0.040635020917967515
+O=NC(F)(F)C(NC(=O)c1ccccc1)c1ccc(F)cc1:
+  smi: O=NC(F)(F)C(NC(=O)c1ccccc1)c1ccc(F)cc1
+  parent1_smi: O=CNC(c1ccccc1)C(F)(F)N=O
+  parent2_smi: O=C(O)c1ccc2nc(NCCO)sc2c1F
+  inter_smi: ''
+  score: 0.04677062238395899
+NC(=S)c1ccc(C(=O)NCCO)cc1Br:
+  smi: NC(=S)c1ccc(C(=O)NCCO)cc1Br
+  parent1_smi: NC(=S)c1ccc(C(=O)NCCO)cc1F
+  parent2_smi: CC(C)C(=O)Nc1cc(F)cc(Cl)c1Br
+  inter_smi: ''
+  score: 0.6065306597126334
+O=CC1C=C(NC(=O)C(F)(F)N=O)CN1C=O:
+  smi: O=CC1C=C(NC(=O)C(F)(F)N=O)CN1C=O
+  parent1_smi: O=NC(F)(F)C(=O)N1CCCCC1
+  parent2_smi: CN(C(=O)O)C1=CC(C(=O)OC(F)F)N(C=O)C1
   inter_smi: ''
   score: 0.3002544491440824
-O=CN=NC1CCC(F)(F)CN1C=O:
-  smi: O=CN=NC1CCC(F)(F)CN1C=O
-  parent1_smi: O=CN=NC1CCC(F)(F)CN1C=O
-  parent2_smi: O=CN=NC1CCC(F)(F)CN1C=O
+O=C(NC(c1ccccc1)C(F)(F)F)c1ccc(Cl)cc1:
+  smi: O=C(NC(c1ccccc1)C(F)(F)F)c1ccc(Cl)cc1
+  parent1_smi: NC(=S)C1=CC(=O)N(c2ccc(F)cc2)C(C(F)(F)F)C1
+  parent2_smi: O=C(NCCO)c1ccc(F)nc1Cl
   inter_smi: ''
-  score: 0.4723665527410147
-NC(=S)C1=C(C(=O)Nc2cc(F)cc(Cl)c2)C(=O)NC1C(F)(F)F:
-  smi: NC(=S)C1=C(C(=O)Nc2cc(F)cc(Cl)c2)C(=O)NC1C(F)(F)F
-  parent1_smi: NC(=S)C1=C(C(=O)Nc2cc(F)cc(Cl)c2)C(=O)NC1C(F)(F)F
-  parent2_smi: O=[N+]([O-])c1ccc2nc(NCCF)sc2c1
+  score: 0.05217639966630833
+O=NC(F)(F)C(=O)NC1CCC(C(F)Cl)CC1:
+  smi: O=NC(F)(F)C(=O)NC1CCC(C(F)Cl)CC1
+  parent1_smi: O=NC(F)(F)C(=O)N1CCCCC1
+  parent2_smi: NC(=S)Nc1ccc(C(=O)NC(CO)C(F)Cl)cc1
   inter_smi: ''
-  score: 0.13323710414756296
+  score: 0.645648526427892
+NC(=O)c1ccc2nc(NCCO)sc2c1Br:
+  smi: NC(=O)c1ccc2nc(NCCO)sc2c1Br
+  parent1_smi: NC(=O)c1ccc2nc(NCCO)sc2c1F
+  parent2_smi: CC(C)C(=O)Nc1cc(F)cc(Cl)c1Br
+  inter_smi: ''
+  score: 0.6065306597126334
+COc1cc(F)cc(Cl)c1Oc1ccc(F)cc1Cl:
+  smi: COc1cc(F)cc(Cl)c1Oc1ccc(F)cc1Cl
+  parent1_smi: COc1cc(Cl)cc(Cl)c1Oc1ccc(Cl)cc1Cl
+  parent2_smi: CC(C)C(=O)Nc1cc(F)cc(Cl)c1Br
+  inter_smi: ''
+  score: 0.19691167520419406
+O=C(O)CNC1CC(F)(Cl)C(Cl)=C(Cl)C1Cl:
+  smi: O=C(O)CNC1CC(F)(Cl)C(Cl)=C(Cl)C1Cl
+  parent1_smi: O=C(O)CCCNC1CC(F)(Cl)C(Cl)=C(Cl)C1Cl
+  parent2_smi: CC(C)C(=O)Nc1cc(F)cc(Br)c1Cl
+  inter_smi: ''
+  score: 0.3002544491440824
+NC(=S)C1CN(c2ncc(Cl)cc2F)CCO1:
+  smi: NC(=S)C1CN(c2ncc(Cl)cc2F)CCO1
+  parent1_smi: CC(C)C(=O)Nc1cc(F)cc(Cl)c1Br
+  parent2_smi: NC(=S)[C@@H]1CN(c2ncc(Cl)cc2F)CCO1
+  inter_smi: ''
+  score: 0.676633846161729
+NC(=O)C1=CC(=O)N(c2ccc(F)cc2)C(C(F)(F)F)C1:
+  smi: NC(=O)C1=CC(=O)N(c2ccc(F)cc2)C(C(F)(F)F)C1
+  parent1_smi: NC(=S)C1=CC(=O)N(c2ccc(F)cc2)C(C(F)(F)F)C1
+  parent2_smi: CN(C)C(=O)Nc1ccccc1N=O
+  inter_smi: ''
+  score: 0.19691167520419406
+CC(=O)N1CCc2ccc(cc2Cl)C1:
+  smi: CC(=O)N1CCc2ccc(cc2Cl)C1
+  parent1_smi: CC(=O)N1CCc2ccccc2C1
+  parent2_smi: CC(=O)N1CCc2ccccc2C1
+  inter_smi: ''
+  score: 0.3855343441745787
+NC(=S)C1=CC=C(C(=O)Nc2cc(F)cc(Cl)c2)C1:
+  smi: NC(=S)C1=CC=C(C(=O)Nc2cc(F)cc(Cl)c2)C1
+  parent1_smi: CC(C)C(=O)Nc1cc(F)cc(Cl)c1Br
+  parent2_smi: NC(=S)c1ccc(C(=O)Nc2cc(F)cc(Br)c2)cc1
+  inter_smi: ''
+  score: 0.2865047968601901
+NC1=CC(C(=O)OC(F)(F)S)N(C=O)C1:
+  smi: NC1=CC(C(=O)OC(F)(F)S)N(C=O)C1
+  parent1_smi: NC(=S)Nc1ccc(C(=O)NC(CO)C(F)Cl)cc1
+  parent2_smi: NC1=CC(C(=O)OC(F)(F)S)N(C=O)C1
+  inter_smi: ''
+  score: 0.391605626676799
+O=NC(F)(F)C(=O)N1CCC(CO)CC1:
+  smi: O=NC(F)(F)C(=O)N1CCC(CO)CC1
+  parent1_smi: CN1N=C(O)C(C(=O)N2CCC(F)(F)N2)NC1=O
+  parent2_smi: O=NC(F)(F)C(=O)N1CCC(CO)CC1
+  inter_smi: ''
+  score: 0.6065306597126334
+O=CNC(c1cccnc1)C(F)(F)N=O:
+  smi: O=CNC(c1cccnc1)C(F)(F)N=O
+  parent1_smi: O=CNC(c1ccccc1)C(F)(F)N=O
+  parent2_smi: CNC(=O)C1=CC(C)=CC(F)(Cl)C(N2[CH]C(=O)OC(=O)N2)=C1Br
+  inter_smi: ''
+  score: 0.3002544491440824
