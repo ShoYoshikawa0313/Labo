@@ -11,16 +11,14 @@ def main():
     parser.add_argument('-root_output_dir', type=str, default="results")
     parser.add_argument('-dir_name',type=str, default="")
     parser.add_argument('-seed', type=int, default=0)
-    parser.add_argument('-resume',type=str, default="")
+    parser.add_argument('-one_island',type=bool, default=False)
 
     args = parser.parse_args()
 
     if not os.path.exists(args.root_output_dir):
         os.mkdir(args.root_output_dir)
     
-    if args.resume != "":
-        args.root_output_dir = args.resume
-    elif args.dir_name == "":
+    if args.dir_name == "":
         dt = datetime.datetime.now() + datetime.timedelta(hours=9)
         args.root_output_dir = os.path.join(args.root_output_dir,dt.strftime('%m-%d_%H:%M'))
     else:
@@ -32,6 +30,7 @@ def main():
     start_time = time()
 
     optimizer = Optimizer(args=args)
+    
     optimizer.optimize()
 
     end_time = time()

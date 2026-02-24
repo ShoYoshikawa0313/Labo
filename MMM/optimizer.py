@@ -44,8 +44,7 @@ class Optimizer:
         self.patience = composition["settings"]["patience"]
 
         self.islands = []
-        if self.args.resume == "": self.make_islands(composition)
-        elif self.args.resume != "": self.resume(composition)
+        self.make_islands(composition)
 
         self.all_smiles = set()
         self.all_scores = dict()
@@ -72,38 +71,6 @@ class Optimizer:
             else:
                 return -1
             self.islands.append(Island(LLM, Evaluator(comps["task"]), self.args.root_output_dir, comps))
-
-    def resume(self, composition):
-        for comps in composition["operetors"]:
-            LLM = None
-            if comps["LLM"]["type"] == "clm":
-                if comps["LLM"]["name"] == "BioT5":
-                    LLM = BioT5(comps)
-                elif comps["LLM"]["name"] == "LlaSMol":
-                    LLM = LlaSMol(comps)
-                elif comps["LLM"]["name"] == "drugassist-instruct":
-                    LLM = Drug_Assist(comps)
-                else: return -1
-            elif comps["LLM"]["type"] == "ollama":
-                LLM = Ollama(comps)
-            elif comps["LLM"]["type"] == "gemini":
-                LLM = Gemini(comps)
-            else:
-                return -1
-
-            resume_root = os.path.join(self.args.resume,comps["name"])
-            population_path = os.path.join(resume_root,"population")
-            offspring_path = os.path.join(resume_root,"offspring")
-
-            population_files = glob.glob(os.path.join(population_path, 'population_*.yaml'))
-            offspring_files = glob.glob(os.path.join(offspring_path, 'offspring_*.yaml'))
-
-            if len(population_files) != len(offspring_files):
-                return -1
-            
-            tmp = Island(LLM, Evaluator(comps["task"]), self.args.root_output_dir, comps, os.path.join(population_path,f"population_{len(population_files) -1}G.yaml"))
-
-            self.islands.append(tmp)
 
     def random_immigration(self):
         # 各島から移住させる個体（移民）を格納するリスト
@@ -229,6 +196,16 @@ class Optimizer:
             self.all_smiles.add(mlc.smi)
             self.all_scores[mlc.smi] = mlc.score
 
+    def sanitize(self, mlcs): # 分子のリストをサニタイズ（検証・クリーンアップ）するメソッドです。
+        new_mlcs = [] # 新しい分子のリストを初期化します。
+        smi_set = set() # SMILES文字列のセットを初期化します（重複を避けるため）。
+        for mlc in mlcs: # 各分子についてループします。
+            smi = mlc.smi # 分子オブジェクトをSMILES文字列に変換します。
+            if smi not in smi_set: # もしSMILESが有効で、まだセットになければ、
+                smi_set.add(smi) # セットにSMILESを追加します。
+                new_mlcs.append(mlc) # 新しいリストに分子オブジェクトを追加します。
+        return new_mlcs # サニタイズされた分子のリストを返します。
+
     def early_stop(self):
         top_scores = sorted(self.all_scores.values(), reverse=True)[:100]
         new_score = np.mean(top_scores)
@@ -248,49 +225,100 @@ class Optimizer:
         print(self.immigration_type)
         print(f"Max processes : {os.cpu_count()}")
 
-        for island in self.islands:
-            self.update_all_smiles(island.population)
-
-        old_score = np.mean(sorted(self.all_scores.values(), reverse=True)[:100])
-        patience = 0
-
-        while(self.finish() == False):
-            self.islands = Parallel(n_jobs=self.processes)(
-                delayed(parallel_shift)(island, self.immigration_frequency, i) for i, island in enumerate(self.islands)
-            )
+        if not self.args.one_island:
 
             for island in self.islands:
-                self.update_all_smiles(island.last_offsprings)
+                self.update_all_smiles(island.population)
 
-            print("Before Immigration:")
-            for island in self.islands:
-                island.log_intermediate()
+            old_score = np.mean(sorted(self.all_scores.values(), reverse=True)[:100])
+            patience = 0
 
-            if self.immigration_type == "no_imm":
-                print("No Immigration")
-            elif self.immigration_type == "random":
-                print("Random Immigration")
-                self.random_immigration()
-            elif self.immigration_type == "cluster":
-                print("Cluster Immigration")
-                self.cluster_novelty_immigration(max_cluster_size=3,cut_off_threshold=0.5)
-            else:
-                print("Immigration Error")
-                return -1
+            while(self.finish() == False):
+                self.islands = Parallel(n_jobs=self.processes)(
+                    delayed(parallel_shift)(island, self.immigration_frequency, i) for i, island in enumerate(self.islands)
+                )
+
+                for island in self.islands:
+                    self.update_all_smiles(island.last_offsprings)
+
+                print("Before Immigration:")
+                for island in self.islands:
+                    island.log_intermediate()
+
+                if self.immigration_type == "no_imm":
+                    print("No Immigration")
+                elif self.immigration_type == "random":
+                    print("Random Immigration")
+                    self.random_immigration()
+                elif self.immigration_type == "cluster":
+                    print("Cluster Immigration")
+                    self.cluster_novelty_immigration(max_cluster_size=3,cut_off_threshold=0.5)
+                else:
+                    print("Immigration Error")
+                    return -1
+                
+                print("After Immigration:")
+                for island in self.islands:
+                    island.log_intermediate()
+
+                print(f"Total oracle calls: {len(self.all_smiles)} / {self.max_oracle_calls}")
+
+                new_score = np.mean(sorted(self.all_scores.values(), reverse=True)[:100])
+                if (new_score - old_score) < 1e-3:
+                    patience += 1
+                    if patience >= self.patience:
+                        print("Early stopping triggered.")
+                        break
+                else:
+                    patience = 0
+                old_score = new_score
+
+        else:
+            global_population = self.islands[0].population
             
-            print("After Immigration:")
             for island in self.islands:
-                island.log_intermediate()
+                island.mount_population(global_population)
+            
+            self.update_all_smiles(global_population)
 
-            print(f"Total oracle calls: {len(self.all_smiles)} / {self.max_oracle_calls}")
+            old_score = np.mean(sorted(self.all_scores.values(), reverse=True)[:100])
+            patience = 0
 
-            new_score = np.mean(sorted(self.all_scores.values(), reverse=True)[:100])
-            if (new_score - old_score) < 1e-3:
-                patience += 1
-                if patience >= self.patience:
-                    print("Early stopping triggered.")
-                    break
-            else:
-                patience = 0
-            old_score = new_score
+            while(self.finish() == False):
+                self.islands = Parallel(n_jobs=self.processes)(
+                    delayed(parallel_shift)(island, self.immigration_frequency, i) for i, island in enumerate(self.islands)
+                )
+
+                for island in self.islands:
+                    self.update_all_smiles(island.last_offsprings)
+
+                next_global_population = global_population[:]
+                
+                for island in self.islands:
+                    next_global_population.extend(island.last_offsprings)
+
+                next_global_population = self.sanitize(next_global_population)
+                next_global_population = sorted(next_global_population, reverse=True)[:self.islands[0].population_size]
+
+                global_population = next_global_population
+
+                for island in self.islands:
+                    island.mount_population(global_population)
+
+                for island in self.islands:
+                    island.log_intermediate()
+
+                print(f"Total oracle calls: {len(self.all_smiles)} / {self.max_oracle_calls}")
+
+                new_score = np.mean(sorted(self.all_scores.values(), reverse=True)[:100])
+                if (new_score - old_score) < 1e-3:
+                    patience += 1
+                    if patience >= self.patience:
+                        print("Early stopping triggered.")
+                        break
+                else:
+                    patience = 0
+                old_score = new_score
+
+
 

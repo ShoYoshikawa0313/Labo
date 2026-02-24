@@ -13,24 +13,23 @@ class Args:
         self.one_island = one_island
 
 process_composits = [
-    Args(model="OneIsland",composition_file="composition.yaml",root_output_dir="results",dir_name="OneIsland_1",seed=0,one_island=True),
-    Args(model="OneIsland",composition_file="composition.yaml",root_output_dir="results",dir_name="OneIsland_2",seed=1,one_island=True),
-    
-    #Args(model="JNK3",composition_file="composition.yaml",root_output_dir="results",dir_name="cluster_jnk3_5",seed=4),
-    #Args(model="QED",composition_file="molleo1.yaml",root_output_dir="results",dir_name="base_QED_2",seed=1),
-    #Args(model="DRD2",composition_file="molleo1.yaml",root_output_dir="results",dir_name="base_DRD2_2",seed=1),
-    #Args(model="GSK3B",composition_file="molleo1.yaml",root_output_dir="results",dir_name="base_GSK3B_2",seed=1),
-    #Args(model="Mestranol",composition_file="molleo1.yaml",root_output_dir="results",dir_name="base_Mestranol_2",seed=1),
-    #Args(model="Thiothixene",composition_file="molleo1.yaml",root_output_dir="results",dir_name="base_Thiothixene_2",seed=1),
-    #Args(model="Perindopril",composition_file="molleo1.yaml",root_output_dir="results",dir_name="base_Perindorpil_2",seed=1),
-    #Args(model="Isomer",composition_file="molleo1.yaml",root_output_dir="results",dir_name="base_Isomer_2",seed=1),
+    Args(model="JNK3",composition_file="molleo4.yaml",root_output_dir="results",dir_name="base_jnk3_5",seed=4),
+    Args(model="QED",composition_file="molleo4.yaml",root_output_dir="results",dir_name="base_QED_5",seed=4),
+    Args(model="DRD2",composition_file="molleo4.yaml",root_output_dir="results",dir_name="base_DRD2_5",seed=4),
+    Args(model="GSK3B",composition_file="molleo4.yaml",root_output_dir="results",dir_name="base_GSK3B_5",seed=4),
+    Args(model="Mestranol",composition_file="molleo4.yaml",root_output_dir="results",dir_name="base_Mestranol_5",seed=4),
+    Args(model="Thiothixene",composition_file="molleo4.yaml",root_output_dir="results",dir_name="base_Thiothixene_5",seed=4),
+    Args(model="Perindopril",composition_file="molleo4.yaml",root_output_dir="results",dir_name="base_Perindorpil_5",seed=4),
+    Args(model="Isomer",composition_file="molleo4.yaml",root_output_dir="results",dir_name="base_Isomer_5",seed=4),
 ]
 
 for process_composit in process_composits:
     if not os.path.exists(process_composit.root_output_dir):
         os.mkdir(process_composit.root_output_dir)
 
-    if process_composit.dir_name == "":
+    if process_composit.resume != "":
+        process_composit.root_output_dir = process_composit.resume
+    elif process_composit.dir_name == "":
         dt = datetime.datetime.now() + datetime.timedelta(hours=9)
         process_composit.root_output_dir = os.path.join(process_composit.root_output_dir,dt.strftime('%m-%d_%H:%M'))
     else:

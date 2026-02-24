@@ -64,6 +64,7 @@ QED:
       population_size: 100
       offspring_size: 50
       bin_size: 70
+      molleo: False
       interval: 0.0
       task: QED
       prompt_template: |
@@ -72,7 +73,7 @@ QED:
 JNK3:
   settings:
     max_generations: 100
-    max_oralcle_calls: 10000
+    max_oralcle_calls: 100000
     immigration_size: 10
     processes: 3
     immigration_frequency: 1
@@ -135,6 +136,7 @@ JNK3:
       population_size: 100
       offspring_size: 50
       bin_size: 70
+      molleo: False
       interval: 0.0
       task: JNK3
       prompt_template: |
@@ -206,6 +208,7 @@ DRD2:
       population_size: 100
       offspring_size: 50
       bin_size: 70
+      molleo: False
       interval: 0.0
       task: DRD2
       prompt_template: |
@@ -277,6 +280,7 @@ GSK3B:
       population_size: 100
       offspring_size: 50
       bin_size: 70
+      molleo: False
       interval: 0.0
       task: GSK3B
       prompt_template: |
@@ -348,6 +352,7 @@ Mestranol:
       population_size: 100
       offspring_size: 50
       bin_size: 70
+      molleo: False
       interval: 0.0
       task: Mestranol_Similarity
       prompt_template: |
@@ -419,6 +424,7 @@ Thiothixene:
       population_size: 100
       offspring_size: 50
       bin_size: 70
+      molleo: False
       interval: 0.0
       task: Thiothixene_Rediscovery
       prompt_template: |
@@ -490,6 +496,7 @@ Perindopril:
       population_size: 100
       offspring_size: 50
       bin_size: 70
+      molleo: False
       interval: 0.0
       task: Perindopril_MPO
       prompt_template: |
@@ -561,6 +568,7 @@ Isomer:
       population_size: 100
       offspring_size: 50
       bin_size: 70
+      molleo: False
       interval: 0.0
       task: Isomers_C9H10N2O2PF2Cl
       prompt_template: |
@@ -624,3 +632,75 @@ Long_Qwen:
                 "Explanation": "Logical explanation of the operation ... "
             }
             <<<json end>>>
+
+OneIsland:
+  settings:
+    max_generations: 100
+    max_oralcle_calls: 100000
+    immigration_size: 10
+    processes: 3
+    immigration_frequency: 1
+    immigration_type : cluster
+    patience: 100
+  operetors:
+    - name: Gemma
+      LLM:
+        name: gemma2:9b
+        type: ollama
+        URL: "http://10.34.35.195:11436"
+      population_size: 300
+      offspring_size: 50
+      interval: 0.0
+      task: JNK3
+      prompt_template: |
+            I have two molecules and their JNK3 scores. The JNK3 score measures a moleculars biological activity against JNK3.
+            <<<ParentInfo>>>
+            Please propose a new molecule that has a higher JNK3 score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.
+            
+            Output Format: Output one new molecule once in the strict JSON format below.
+            Include <<<json start>>> and <<<json end>>> at the beginning and end of the json file.
+            Entry must include the SMILES of the new molecule and a logical explanation of the operation.
+            
+            <<<json start>>>
+            {
+                "SMILES": "SMILES of the generated molecule",
+                "Explanation": "Logical explanation of the operation ... "
+            }
+            <<<json end>>>
+    - name: Qwen3
+      LLM:
+        name: qwen3:8b
+        type: ollama
+        URL: "http://10.34.35.195:11437"
+      population_size: 300
+      offspring_size: 50
+      interval: 0.0
+      task: JNK3
+      prompt_template: |
+            I have two molecules and their JNK3 scores. The JNK3 score measures a moleculars biological activity against JNK3.
+            <<<ParentInfo>>>
+            Please propose a new molecule that has a higher JNK3 score. You can either make crossover and mutations based on the given molecules or just propose a new molecule based on your knowledge.
+            
+            Output Format: Output one new molecule once in the strict JSON format below.
+            Include <<<json start>>> and <<<json end>>> at the beginning and end of the json file.
+            Entry must include the SMILES of the new molecule and a logical explanation of the operation.
+            
+            <<<json start>>>
+            {
+                "SMILES": "SMILES of the generated molecule",
+                "Explanation": "Logical explanation of the operation ... "
+            }
+            <<<json end>>>
+    - name: BioT5
+      LLM:
+        name: BioT5
+        type: clm
+        URL: "http://10.34.35.195:5003"
+      population_size: 300
+      offspring_size: 50
+      bin_size: 70
+      molleo: False
+      interval: 0.0
+      task: JNK3
+      prompt_template: |
+            Definition: You are given a molecule SELFIES. Your job is to generate a SELFIES molecule that is a greater inhibitor of JNK3.\n\n

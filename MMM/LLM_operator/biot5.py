@@ -2,15 +2,19 @@ import random
 import requests
 from tqdm import tqdm
 from rdkit import Chem
+import numpy as np
 
 # 自作モジュールのインポート
 import LLM_operator.crossover as co
 from evaluator import smiles_similarity
 
+# スコアが0になるのを防ぐための微小な値
+MINIMUM = 1e-10
 
 class BioT5:
     def __init__(self, composit):
         
+        self.molleo = composit["molleo"]
         self.offspring_size = composit["offspring_size"]
         self.bin_size = composit["bin_size"]
         self.prompt_template = composit["prompt_template"]
@@ -71,16 +75,60 @@ class BioT5:
                     return new_child_smi, parent[0].smi, parent[1].smi
             except:
                 print("Error : Invalid crossover in reproduce")
+
+    def weighted_random_select(self, population, size, reverse=False):
+        """
+        reverse=Trueの場合、スコアが低い個体を優先的に選択します。
+        reverse=Falseの場合、スコアが高い個体を優先的に選択します。
+        defaultはreverse=Falseです。
+        """
+        # スコアを抽出
+        if reverse == False:
+            population_scores = [mlc.score for mlc in population]
+        else:
+            population_scores = [1.0 - mlc.score for mlc in population]
+        # スコアと分子をタプルのリストにまとめる
+        all_tuples = list(zip(population_scores, population))
+        # スコアに微小な値を加えて、ゼロ除算を回避する
+        population_scores = [s + MINIMUM for s in population_scores]
+        # スコアの合計を計算
+        sum_scores = sum(population_scores)
+        # 各個体のスコアを正規化し、選択確率を計算
+        population_probs = [p / sum_scores for p in population_scores]
+        # 計算された確率分布に基づき、個体のインデックスを復元抽出で選択
+        indices = np.random.choice(len(all_tuples), p=population_probs, size=size, replace=True)
+        return indices
     
-    def mating(self, mating_list, top_smi,process_id=0):
+    def mating(self, population, process_id=0):
+
+        # スコアに基づいて親集団（メイティングプール）を形成
+        indices = self.weighted_random_select(population, self.offspring_size)
+        mating_list = [population[index] for index in indices]
+
+        top_smi = population[0].smi
+
         families = []
-        for i in tqdm(range(self.bin_size), position=process_id, desc=f"{self.model_name:<15}"):
-            while(True):
+
+        if not self.molleo:
+            for i in tqdm(range(self.bin_size), position=process_id, desc=f"{self.model_name:<15}"):
+                while(True):
+                    inter_smi, parent1_smi, parent2_smi = self.reproduce(mating_list)
+                    response_model, offspring_smi = self.request(inter_smi)
+                    if offspring_smi is None: continue
+                    families.append({"offspring":offspring_smi, "parent1":parent1_smi, "parent2":parent2_smi, "inter":inter_smi})
+                    break
+
+        else:
+            for i in range(self.offspring_size):
                 inter_smi, parent1_smi, parent2_smi = self.reproduce(mating_list)
-                response_model, offspring_smi = self.request(inter_smi)
-                if offspring_smi is None: continue
-                families.append({"offspring":offspring_smi, "parent1":parent1_smi, "parent2":parent2_smi, "inter":inter_smi})
-                break
+                families.append({"offspring":inter_smi, "parent1":parent1_smi, "parent2":parent2_smi})
+            j = 0
+            while(len(families) < self.bin_size):
+                parent_smi = population[j].smi
+                response_model, offspring_smi = self.request(parent_smi)
+                if offspring_smi is not None:
+                    families.append({"offspring":offspring_smi, "parent1":parent_smi, "parent2":parent_smi})
+                j += 1
 
         families.sort(key=lambda x: smiles_similarity(x["offspring"], top_smi), reverse=True)
         return families[:self.offspring_size]

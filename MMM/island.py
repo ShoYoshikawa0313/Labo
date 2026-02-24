@@ -11,15 +11,12 @@ from tdc.generation import MolGen # tdc.generation.MolGenクラスをインポ�
 
 from mol_data import Mol_Data
 
-# スコアが0になるのを防ぐための微小な値
-MINIMUM = 1e-10
-
 class Island():
     '''
     遺伝的アルゴリズム（GA）をベースとした分子最適化を実行するクラス。
     '''
 
-    def __init__(self, LLM, evaluator, root_output_dir, composit, resume_point=""):
+    def __init__(self, LLM, evaluator, root_output_dir, composit):
 
         self.LLM = LLM
         self.evaluator = evaluator
@@ -31,8 +28,7 @@ class Island():
 
         self.last_offsprings = None
         self.population = None
-        if resume_point == "": self.population = self.initial_population()
-        elif resume_point != "": self.population = self.resume_population(resume_point)
+        self.population = self.initial_population()
 
         self.n_generation  = 0
 
@@ -48,44 +44,10 @@ class Island():
             initial_population.append(Mol_Data(mol,smi,self.evaluator.score(smi)))
         initial_population.sort(reverse=True)
         return initial_population
-    
-    def resume_population(self, resume_point):
-        population = []
-        last_gen = int(re.findall(r'\d+', resume_point.split("/")[-1])[0])
-        self.n_generation = last_gen + 1
-        with open(resume_point, 'r', encoding='utf-8') as f:
-            datas = yaml.safe_load(f)
-            for data in datas.values():
-                population.append(Mol_Data(
-                    Chem.MolFromSmiles(data["smi"]),
-                    data["smi"],
-                    self.evaluator.score(data["smi"])
-                ))
-        population.sort(reverse=True)
-        return population
 
-    def weighted_random_select(self, size, reverse=False):
-        """
-        reverse=Trueの場合、スコアが低い個体を優先的に選択します。
-        reverse=Falseの場合、スコアが高い個体を優先的に選択します。
-        defaultはreverse=Falseです。
-        """
-        # スコアを抽出
-        if reverse == False:
-            population_scores = [mlc.score for mlc in self.population]
-        else:
-            population_scores = [1.0 - mlc.score for mlc in self.population]
-        # スコアと分子をタプルのリストにまとめる
-        all_tuples = list(zip(population_scores, self.population))
-        # スコアに微小な値を加えて、ゼロ除算を回避する
-        population_scores = [s + MINIMUM for s in population_scores]
-        # スコアの合計を計算
-        sum_scores = sum(population_scores)
-        # 各個体のスコアを正規化し、選択確率を計算
-        population_probs = [p / sum_scores for p in population_scores]
-        # 計算された確率分布に基づき、個体のインデックスを復元抽出で選択
-        indices = np.random.choice(len(all_tuples), p=population_probs, size=size, replace=True)
-        return indices
+    def mount_population(self,population):
+        self.population = population[:]
+        self.population.sort(reverse=True)
 
     def families2mlcs(self, families):
         mlcs = []
@@ -192,11 +154,7 @@ class Island():
 
         next_population = self.population[:]
 
-        # スコアに基づいて親集団（メイティングプール）を形成
-        indices = self.weighted_random_select(self.offspring_size)
-        mating_list = [next_population[index] for index in indices]
-
-        families = self.LLM.mating(mating_list, self.population[0].smi, process_id)
+        families = self.LLM.mating(next_population, process_id)
         offsprings = self.families2mlcs(families)
         self.last_offsprings = offsprings
 

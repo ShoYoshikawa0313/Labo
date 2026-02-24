@@ -3,7 +3,10 @@ import requests
 import re
 from rdkit import Chem
 from tqdm import tqdm
+import numpy as np
 
+# スコアが0になるのを防ぐための微小な値
+MINIMUM = 1e-10
 
 class Ollama:
     def __init__(self, composit):
@@ -85,8 +88,36 @@ class Ollama:
         parent_info += f"[ ParentA : {parentA.smi} , {parentA.score:.3f} ]\n"
         parent_info += f"[ ParentB : {parentB.smi} , {parentB.score:.3f} ]\n"
         return parent_info, parentA.smi, parentB.smi
+    
+    def weighted_random_select(self, population, size, reverse=False):
+        """
+        reverse=Trueの場合、スコアが低い個体を優先的に選択します。
+        reverse=Falseの場合、スコアが高い個体を優先的に選択します。
+        defaultはreverse=Falseです。
+        """
+        # スコアを抽出
+        if reverse == False:
+            population_scores = [mlc.score for mlc in population]
+        else:
+            population_scores = [1.0 - mlc.score for mlc in population]
+        # スコアと分子をタプルのリストにまとめる
+        all_tuples = list(zip(population_scores, population))
+        # スコアに微小な値を加えて、ゼロ除算を回避する
+        population_scores = [s + MINIMUM for s in population_scores]
+        # スコアの合計を計算
+        sum_scores = sum(population_scores)
+        # 各個体のスコアを正規化し、選択確率を計算
+        population_probs = [p / sum_scores for p in population_scores]
+        # 計算された確率分布に基づき、個体のインデックスを復元抽出で選択
+        indices = np.random.choice(len(all_tuples), p=population_probs, size=size, replace=True)
+        return indices
 
-    def mating(self, mating_list, top_smi, process_id=0):
+    def mating(self, population, process_id=0):
+
+        # スコアに基づいて親集団（メイティングプール）を形成
+        indices = self.weighted_random_select(population, self.offspring_size)
+        mating_list = [population[index] for index in indices]
+
         families = []
         log = ""
         for i in tqdm(range(self.offspring_size), position=process_id, desc=f"{self.model_name:<15}"):
